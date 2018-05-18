@@ -1,0 +1,40 @@
+{
+  "name": "ticket721_contracts",
+  "version": "0.0.1",
+  "description": "Ethereum Smart Contract for Ticket721",
+  "main": "\"\"",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "jest --notify"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/mortimr/Ticket721.git"
+  },
+  "keywords": [
+    "Ethereum",
+    "Solidity",
+    "Smart",
+    "Contract",
+    "Ticket721",
+    "ERC721"
+  ],
+  "author": "Iulian Rotaru",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://gitlab.com/mortimr/Ticket721/issues"
+  },
+  "homepage": "https://gitlab.com/mortimr/Ticket721#README",
+  "devDependencies": {
+    "fs-extra": "^6.0.1",
+    "ganache-core": "^2.1.0",
+    "jest": "^22.4.4",
+    "truffle": "^4.1.8"
+  },
+  "jest": {
+    "globalSetup": "./env/setup.js",
+    "globalTeardown": "./env/teardown.js"
+  }
+}
