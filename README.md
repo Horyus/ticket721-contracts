@@ -3,9 +3,6 @@
   Description: Ethereum Smart Contracts for Ticket721
   Author: Iulian Rotaru (mortimr)
   -->
-
-# Ticket721 Contracts
-
 <div align="center">
     <img width="25%" src="./.assets/Ticket721Contracts.png"/>
 </div>
