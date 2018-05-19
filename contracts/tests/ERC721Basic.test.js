@@ -34,7 +34,7 @@ describe("ERC721Basic Tests", () => {
                 });
             });
         });
-    }, 60000);
+    }, 300000);
 
     describe("balanceOf(address)", () => {
 
