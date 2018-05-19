@@ -32,10 +32,6 @@ const setup = async () => new Promise((ok, ko) => {
                         if (err)
                             ko(err);
                         console.log("# Deployed Smart Contracts with Truffle");
-                        if (stdout)
-                            console.error(stdout);
-                        if (stderr)
-                            console.error(stderr);
                         console.log("\n+--------------------------------------+");
                         console.log("| Test Setup Successful                |");
                         console.log("+--------------------------------------+\n");
