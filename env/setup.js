@@ -28,7 +28,7 @@ const setup = async () => new Promise((ok, ko) => {
                     if (err)
                         ko(err);
                     console.log("# Started Ganache server on port 8547");
-                    exec("./node_modules/.bin/truffle migrate --reset", (err, stdout, stderr) => {
+                    exec("./node_modules/.bin/truffle migrate --reset", async (err, stdout, stderr) => {
                         if (err)
                             ko(err);
                         console.log("# Deployed Smart Contracts with Truffle");

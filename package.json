@@ -28,10 +28,13 @@
   },
   "homepage": "https://gitlab.com/mortimr/Ticket721#README",
   "devDependencies": {
+    "bignumber.js": "^7.1.0",
     "fs-extra": "^6.0.1",
     "ganache-core": "^2.1.0",
     "jest": "^22.4.4",
-    "truffle": "^4.1.8"
+    "truffle": "^4.1.8",
+    "truffle-contract": "^3.0.5",
+    "web3": "^1.0.0-beta.33"
   },
   "jest": {
     "globalSetup": "./env/setup.js",
