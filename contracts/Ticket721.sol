@@ -144,10 +144,16 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         return _max_ticket_count;
     }
 
-    function openForSale(uint256 ticketId) public {
+    function openSale(uint256 ticketId) public {
         require(ownerOf(ticketId) == msg.sender);
 
         _open_by_ticket[ticketId] = true;
+    }
+
+    function closeSale(uint256 ticketId) public {
+        require(ownerOf(ticketId) == msg.sender);
+
+        _open_by_ticket[ticketId] = false;
     }
 
     // ERC165 Implementation

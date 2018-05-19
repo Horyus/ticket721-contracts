@@ -31,7 +31,9 @@
     "bignumber.js": "^7.1.0",
     "fs-extra": "^6.0.1",
     "ganache-core": "^2.1.0",
+    "human-names": "^1.0.10",
     "jest": "^22.4.4",
+    "people-names": "^1.0.15",
     "truffle": "^4.1.8",
     "truffle-contract": "^3.0.5",
     "web3": "^1.0.0-beta.33"
