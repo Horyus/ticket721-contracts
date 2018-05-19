@@ -28,6 +28,7 @@
   },
   "homepage": "https://gitlab.com/mortimr/Ticket721#README",
   "devDependencies": {
+    "bignumber.js": "^7.1.0",
     "fs-extra": "^6.0.1",
     "ganache-core": "^2.1.0",
     "jest": "^22.4.4",

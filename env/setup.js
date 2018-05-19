@@ -1,8 +1,5 @@
 const Ganache = require("ganache-core");
 const { exec } = require('child_process');
-const contract = require("truffle-contract");
-const Web3 = require("web3");
-
 
 const isPortTaken = function(port, fn) {
     const net = require('net');
@@ -39,18 +36,6 @@ const setup = async () => new Promise((ok, ko) => {
                             console.error(stdout);
                         if (stderr)
                             console.error(stderr);
-                        const provider = new Web3.providers.HttpProvider("http://localhost:8547");
-                        provider.sendAsync = function() {
-                            return provider.send.apply(
-                                provider, arguments
-                            );
-                        };
-                        const Ticket721 = contract(require("../build/contracts/Ticket721.json"));
-                        Ticket721.setProvider(provider);
-                        global.Ticket721 = await Ticket721.deployed();
-                        const Ticket721Train = contract(require("../build/contracts/Ticket721Train.json"));
-                        Ticket721Train.setProvider(provider);
-                        global.Ticket721Train = await Ticket721Train.deployed();
                         console.log("\n+--------------------------------------+");
                         console.log("| Test Setup Successful                |");
                         console.log("+--------------------------------------+\n");
