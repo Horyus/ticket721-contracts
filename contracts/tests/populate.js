@@ -34,16 +34,9 @@ module.exports = async (Ticket721, Ticket721Train, Web3, accounts) => {
 
         }
         verbose += "+--------------------------------------------+--------------------------------+\n";
-        const chain_amount = (await Ticket721.balanceOf(accounts[account_idx], {from: accounts[account_idx]})).toNumber();
-        const local_amount = ret[accounts[account_idx]].amount;
-        if ((await Ticket721.balanceOf(accounts[account_idx], {from: accounts[account_idx]})).toNumber() !== ret[accounts[account_idx]].amount) {
-            console.error(chain_amount, local_amount);
-            console.log(ret);
-            throw new Error("Invalid amount of tickets for account " + accounts[account_idx]);
-        }
     }
 
-    console.error(verbose);
+    console.log(verbose);
 
     return ret;
 };

@@ -240,7 +240,6 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
     function approve(address _to, uint256 _tokenId) public {
         require(_tokenId != 0);
-        require(_to != address(0));
         require(_to != msg.sender);
         require(msg.sender == ownerOf(_tokenId));
 
@@ -251,6 +250,8 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
     function getApproved(uint256 _tokenId) public view returns (address) {
         require(_tokenId != 0);
+        require(exists(_tokenId));
+
         return (_approved_by_ticket[_tokenId]);
     }
 
