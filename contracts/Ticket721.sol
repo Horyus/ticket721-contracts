@@ -144,10 +144,25 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         return _max_ticket_count;
     }
 
-    function openForSale(uint256 ticketId) public {
+    function openSale(uint256 ticketId) public {
         require(ownerOf(ticketId) == msg.sender);
 
         _open_by_ticket[ticketId] = true;
+    }
+
+    function closeSale(uint256 ticketId) public {
+        require(ownerOf(ticketId) == msg.sender);
+
+        _open_by_ticket[ticketId] = false;
+    }
+
+    function buy(uint256 ticketId) public payable {
+        require(ticketId != 0);
+        require(msg.sender != ownerOf(ticketId));
+        require(msg.value >= getTicketPrice(ticketId));
+
+        _approved_by_ticket[ticketId] = msg.sender;
+        safeTransferFrom(ownerOf(ticketId), msg.sender, ticketId);
     }
 
     // ERC165 Implementation
@@ -234,7 +249,6 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
     function approve(address _to, uint256 _tokenId) public {
         require(_tokenId != 0);
-        require(_to != address(0));
         require(_to != msg.sender);
         require(msg.sender == ownerOf(_tokenId));
 
@@ -245,6 +259,8 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
     function getApproved(uint256 _tokenId) public view returns (address) {
         require(_tokenId != 0);
+        require(exists(_tokenId));
+
         return (_approved_by_ticket[_tokenId]);
     }
 
@@ -256,13 +272,12 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         revert();
     }
 
-    function transferFrom(address _from, address _to, uint256 _tokenId) public payable {
+    function transferFrom(address _from, address _to, uint256 _tokenId) public {
         require(_tokenId != 0);
-        require(_from == msg.sender || _approved_by_ticket[_tokenId] == msg.sender || _open_by_ticket[_tokenId] == true);
+        require(_from == msg.sender || _approved_by_ticket[_tokenId] == msg.sender);
         require(_owner_by_ticket[_tokenId] == _from);
         require(_to != address(0));
         require(_to != _from);
-        require(msg.value >= getTicketPrice(_tokenId));
 
         if (_approved_by_ticket[_tokenId] != address(0))
             _approved_by_ticket[_tokenId] = address(0);
@@ -270,10 +285,6 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         if (_open_by_ticket[_tokenId] == true)
             _open_by_ticket[_tokenId] = false;
 
-        if (msg.value > getTicketPrice(_tokenId))
-            msg.sender.transfer(SafeMath.sub(msg.value, getTicketPrice(_tokenId)));
-        if (_owner_by_ticket[_tokenId] != address(this))
-            _owner_by_ticket[_tokenId].transfer(getTicketPrice(_tokenId));
         _owner_by_ticket[_tokenId] = _to;
         _ticket_list_by_owner[_from][_index_by_ticket[_tokenId]] = 0;
         _index_by_ticket[_tokenId] = _ticket_list_by_owner[_to].push(_tokenId) - 1;
@@ -281,15 +292,15 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         emit ERC721Basic.Transfer(_from, _to, _tokenId);
     }
 
-    function safeTransferFrom(address _from, address _to, uint256 _tokenId) public payable {
+    function safeTransferFrom(address _from, address _to, uint256 _tokenId) public {
         transferFrom(_from, _to, _tokenId);
-        if (AddressUtils.isContract(_to) && (ERC721Receiver(_to).onERC721Received(_from, _tokenId, "") != bytes4(keccak256("onERC721Received(address,uint256,bytes)"))))
+        if (AddressUtils.isContract(_to) && (ERC721Receiver(_to).onERC721Received(_from, _tokenId, "") != ERC721Receiver(0).onERC721Received.selector))
             revert();
     }
 
-    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes _data) public payable {
+    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes _data) public {
         transferFrom(_from, _to, _tokenId);
-        if (AddressUtils.isContract(_to) && (ERC721Receiver(_to).onERC721Received(_from, _tokenId, _data) != bytes4(keccak256("onERC721Received(address,uint256,bytes)"))))
+        if (AddressUtils.isContract(_to) && (ERC721Receiver(_to).onERC721Received(_from, _tokenId, _data) != ERC721Receiver(0).onERC721Received.selector))
             revert();
     }
 
