@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "jest --notify"
+    "test": "jest --notify",
+    "ci_test": "seq 5 | xargs -Iz jest --notify"
   },
   "repository": {
     "type": "git",
