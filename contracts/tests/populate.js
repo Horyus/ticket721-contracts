@@ -4,6 +4,7 @@ module.exports = async (Ticket721, Ticket721Train, Web3, accounts) => {
 
     const ret = {};
     const price = await Ticket721.getDefaultTicketPrice();
+    let total = 0;
 
     let verbose = "+--------------------------------------------+--------------------------------+\n";
 
@@ -26,6 +27,7 @@ module.exports = async (Ticket721, Ticket721Train, Web3, accounts) => {
             } catch (e) {
                 throw (e);
             }
+            ++total;
             const insert = {id: (await Ticket721.tokenOfOwnerByIndex(accounts[account_idx], ticket_idx, {from: accounts[account_idx]})), first_name: first_name, last_name: last_name};
             let tmp = "| " + accounts[account_idx] + " | " + insert.id + " " + insert.first_name + " " + insert.last_name;
             tmp += " ".repeat(78 - tmp.length) + "|\n";
@@ -36,5 +38,5 @@ module.exports = async (Ticket721, Ticket721Train, Web3, accounts) => {
         verbose += "+--------------------------------------------+--------------------------------+\n";
     }
 
-    return {summary: ret, init: verbose};
+    return {summary: ret, init: verbose, total: total};
 };
