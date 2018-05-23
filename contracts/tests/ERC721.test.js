@@ -221,7 +221,7 @@ describe("ERC721Basic Tests", () => {
 
             };
 
-            for (let test_idx = 0; test_idx < 25; ++test_idx) {
+            for (let test_idx = 0; test_idx < 100; ++test_idx) {
                 test("Random Exist Check #" + (test_idx + 1), random_test);
             }
 
@@ -287,7 +287,7 @@ describe("ERC721Basic Tests", () => {
 
             };
 
-            for (let test_idx = 0; test_idx < 25; ++test_idx) {
+            for (let test_idx = 0; test_idx < 150; ++test_idx) {
                 test("Random Approvals #" + (test_idx + 1), random_test);
             }
 
@@ -542,7 +542,7 @@ describe("ERC721Basic Tests", () => {
 
             }, 60000);
 
-            for (let test_idx = 0; test_idx < 25; ++test_idx) {
+            for (let test_idx = 0; test_idx < 250; ++test_idx) {
                 test("Random Transfer #" + (test_idx + 1), random_transfer);
             }
 
@@ -629,11 +629,11 @@ describe("ERC721Basic Tests", () => {
 
             };
 
-            for (let test_idx = 0; test_idx < 25; ++test_idx) {
+            for (let test_idx = 0; test_idx < 250; ++test_idx) {
                 test("Random Safe Transfer to User #" + (test_idx + 1), random_transfer_to_users);
             }
 
-            for (let test_idx = 0; test_idx < 25; ++test_idx) {
+            for (let test_idx = 0; test_idx < 100; ++test_idx) {
                 test("Random Safe Transfer to Contract #" + (test_idx + 1), random_transfer_to_receiver);
             }
 
@@ -757,7 +757,7 @@ describe("ERC721Basic Tests", () => {
                 }
             };
 
-            for (let test_idx = 0; test_idx < 25; ++test_idx) {
+            for (let test_idx = 0; test_idx < 100; ++test_idx) {
                 test("Random Safe Transfer to Contract #" + (test_idx + 1), random_transfer_to_receiver);
             }
 

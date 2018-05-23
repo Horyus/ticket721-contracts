@@ -10,7 +10,7 @@ module.exports = async (Ticket721, Ticket721Train, Web3, accounts) => {
 
     for (let account_idx = 0; account_idx < accounts.length; ++account_idx) {
         ret[accounts[account_idx]] = {
-            amount: Math.floor((Math.random() * 40) + 5),
+            amount: Math.floor((Math.random() * 80) + 20),
             ids: []
         };
         for (let ticket_idx = 0; ticket_idx < ret[accounts[account_idx]].amount; ++ticket_idx) {
