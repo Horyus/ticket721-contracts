@@ -19,6 +19,7 @@ let transfers = {};
 describe("ERC721Basic Tests", () => {
 
     beforeAll(async (done) => {
+
         const provider = new Web3.providers.HttpProvider("http://localhost:8547");
         provider.sendAsync = function () {
             return provider.send.apply(
@@ -56,9 +57,11 @@ describe("ERC721Basic Tests", () => {
                 })
             });
         });
+
     }, 300000);
 
     afterAll(() => {
+
         process.stdout.write("Initial State =>\n");
         process.stdout.write(init);
         let verbose = "+--------------------------------------------+--------------------------------+\n";
@@ -81,6 +84,7 @@ describe("ERC721Basic Tests", () => {
         process.stdout.write(verbose);
         process.stdout.write("Actions List =>\n");
         process.stdout.write(output);
+
     });
 
     describe("ERC721Metadata Tests", () => {
@@ -88,11 +92,13 @@ describe("ERC721Basic Tests", () => {
         describe("name()", () => {
 
             test("Check return value", (done) => {
+
                 Ticket721.name({from: coinbase}).then(res => {
                     if (res !== 'My Ticket')
                         done(new Error("Invalid recovered name"));
                     done();
                 });
+
             })
 
         });
@@ -100,11 +106,13 @@ describe("ERC721Basic Tests", () => {
         describe("symbol()", () => {
 
             test("Check return value", (done) => {
+
                 Ticket721.symbol({from: coinbase}).then(res => {
                     if (res !== 'MTK')
                         done(new Error("Invalid recovered symbol"));
                     done();
                 })
+
             });
 
         });
@@ -116,22 +124,27 @@ describe("ERC721Basic Tests", () => {
     });
 
     describe("ERC721Basic Tests", () => {
+
         describe("balanceOf(address)", () => {
 
             test("Check balance of accounts", async (done) => {
+
                 for (let account_idx = 0; account_idx < Object.keys(summary).length; ++account_idx) {
                     const account = Object.keys(summary)[account_idx];
                     if ((await Ticket721.balanceOf(account, {from: account})).toNumber() !== summary[account].amount)
                         done(new Error("Invalid OnChain amount of Ticket721 for " + account));
                 }
                 done();
+
             });
 
             test("Check balance of random account", async (done) => {
+
                 const account = "0x" + RandomString.generate({length: 40, charset: 'hex'});
                 if ((await Ticket721.balanceOf(account, {from: account})).toNumber() !== 0)
                     done(new Error("Invalid OnChain amount of Ticket721 for " + account));
                 done();
+
             });
 
         });
@@ -139,6 +152,7 @@ describe("ERC721Basic Tests", () => {
         describe("ownerOf(uint256)", () => {
 
             const random_test = async (done) => {
+
                 const account_idx = Math.floor(Math.random() * 10);
                 const account = Object.keys(summary)[account_idx];
                 const id = summary[account].ids[Math.floor(Math.random() * summary[account].ids.length)].id;
@@ -150,6 +164,7 @@ describe("ERC721Basic Tests", () => {
                     output += "✓\n";
                     done();
                 }
+
             };
 
             for (let test_idx = 0; test_idx < 25; ++test_idx) {
@@ -157,6 +172,7 @@ describe("ERC721Basic Tests", () => {
             }
 
             test("Check with Invalid ID", async (done) => {
+
                 try {
                     const rand_id = Math.floor(Math.random() * 1000000) + 333;
                     output += ("ownerOf(" + rand_id + ") \tshould revert ");
@@ -167,9 +183,11 @@ describe("ERC721Basic Tests", () => {
                     output += "✓\n";
                     done();
                 }
+
             });
 
             test("Check with Invalid ID 0", async (done) => {
+
                 try {
                     const id = 0;
                     output += ("ownerOf(0) \tshould revert ");
@@ -180,6 +198,7 @@ describe("ERC721Basic Tests", () => {
                     output += "✓\n";
                     done();
                 }
+
             });
 
         });
@@ -187,6 +206,7 @@ describe("ERC721Basic Tests", () => {
         describe("exists(uint256)", () => {
 
             const random_test = async (done) => {
+
                 const account_idx = Math.floor(Math.random() * 10);
                 const account = Object.keys(summary)[account_idx];
                 const id = summary[account].ids[Math.floor(Math.random() * summary[account].ids.length)].id;
@@ -198,6 +218,7 @@ describe("ERC721Basic Tests", () => {
                     output += "✓\n";
                     done();
                 }
+
             };
 
             for (let test_idx = 0; test_idx < 25; ++test_idx) {
@@ -205,6 +226,7 @@ describe("ERC721Basic Tests", () => {
             }
 
             test("Check with Invalid ID", async (done) => {
+
                 const rand_id = Math.floor(Math.random() * 1000000) + 333;
                 output += ("exists(" + rand_id + ") \t=== false ");
                 if (await Ticket721.exists(rand_id, {from: coinbase})) {
@@ -214,9 +236,11 @@ describe("ERC721Basic Tests", () => {
                     output += "✓\n";
                     done();
                 }
+
             });
 
             test("Check with Invalid ID 0", async (done) => {
+
                 try {
                     const id = 0;
                     output += ("exists(" + id + ") \tshould revert ");
@@ -227,6 +251,7 @@ describe("ERC721Basic Tests", () => {
                     output += "✓\n";
                     done();
                 }
+
             });
 
         });
@@ -234,6 +259,7 @@ describe("ERC721Basic Tests", () => {
         describe("approve(address, uint256)", () => {
 
             const random_test = async (done) => {
+
                 let combination_found = false;
                 while (!combination_found) {
                     const account_idx = Math.floor(Math.random() * 10);
@@ -258,6 +284,7 @@ describe("ERC721Basic Tests", () => {
                         done(e);
                     }
                 }
+
             };
 
             for (let test_idx = 0; test_idx < 25; ++test_idx) {
@@ -265,6 +292,7 @@ describe("ERC721Basic Tests", () => {
             }
 
             test("Invalid Approval #1: Self Approval", async (done) => {
+
                 let combination_found = false;
                 while (!combination_found) {
                     const account_idx = Math.floor(Math.random() * 10);
@@ -285,9 +313,11 @@ describe("ERC721Basic Tests", () => {
                         done();
                     }
                 }
+
             });
 
             test("Invalid Approval #2: Not mine", async (done) => {
+
                 let combination_found = false;
                 while (!combination_found) {
                     const account_idx = Math.floor(Math.random() * 10);
@@ -318,9 +348,11 @@ describe("ERC721Basic Tests", () => {
                         done();
                     }
                 }
+
             });
 
             test("Invalid Approval #3: Approving ID 0", async (done) => {
+
                 const account_idx = Math.floor(Math.random() * 10);
                 const account = Object.keys(summary)[account_idx];
 
@@ -339,9 +371,11 @@ describe("ERC721Basic Tests", () => {
                     output += "✓\n";
                     done();
                 }
+
             });
 
             test("Remove Approval by Approving 0", async (done) => {
+
                 const id_count = Object.keys(approvals).length;
                 const id = Object.keys(approvals)[Math.floor(Math.random() * id_count)];
                 output += ("approves(0x" + "0".repeat(40) + ", " + id + ", {from: " + approvals[id].from + "}" + ") \tshouldn't revert ");
@@ -354,6 +388,7 @@ describe("ERC721Basic Tests", () => {
                     output += "✗\n";
                     done(new Error("Should be possible to cancel approval by approving address(0)"))
                 }
+
             });
 
         });
@@ -361,9 +396,9 @@ describe("ERC721Basic Tests", () => {
         describe("getApproved(uint256)", () => {
 
             test("Checking previous approvals", async (done) => {
+
                 for (let approval_idx = 0; approval_idx < Object.keys(approvals).length; ++approval_idx) {
                     const id = Object.keys(approvals)[approval_idx];
-
                     output += ("getApproved(" + id + ") \t=== " + approvals[id].to + " ");
                     if ((await Ticket721.getApproved(id, {from: coinbase})).toLowerCase() !== approvals[id].to.toLowerCase()) {
                         output += "✗\n";
@@ -374,9 +409,11 @@ describe("ERC721Basic Tests", () => {
                     }
                 }
                 done();
+
             });
 
             test("Checking unapproved ID", async (done) => {
+
                 let combination_found = false;
                 while (!combination_found) {
                     const account_idx = Math.floor(Math.random() * 10);
@@ -395,6 +432,7 @@ describe("ERC721Basic Tests", () => {
                         done();
                     }
                 }
+
             });
 
         });
@@ -402,12 +440,14 @@ describe("ERC721Basic Tests", () => {
         describe("setApprovalForAll(address, bool)", () => {
 
             test("Test automatic revert", async (done) => {
+
                 try {
                     await Ticket721.setApprovalForAll(accounts[0], true, {from: coinbase});
                     done(new Error("Should revert: it didn't"));
                 } catch (e) {
                     done();
                 }
+
             });
 
         });
@@ -415,12 +455,14 @@ describe("ERC721Basic Tests", () => {
         describe("isApprovedForAll(address, address)", () => {
 
             test("Test automatic revert", async (done) => {
+
                 try {
                     await Ticket721.isApprovedForAll(accounts[0], accounts[1], {from: coinbase});
                     done(new Error("Should revert: it didn't"));
                 } catch (e) {
                     done();
                 }
+
             });
 
         });
@@ -428,6 +470,7 @@ describe("ERC721Basic Tests", () => {
         describe("transferFrom(address, address, uint256)", () => {
 
             const random_transfer = async (done) => {
+
                 let found = false;
                 while (!found) {
                     const account_idx = Math.floor(Math.random() * 10);
@@ -462,9 +505,11 @@ describe("ERC721Basic Tests", () => {
                         done(e);
                     }
                 }
+
             };
 
             test("Transfer all previously approved tokens", async (done) => {
+
                 for (let approval_idx = 0; approval_idx < Object.keys(approvals).length; ++approval_idx) {
                     const id = Object.keys(approvals)[approval_idx];
                     const {from, to} = approvals[id];
@@ -494,6 +539,7 @@ describe("ERC721Basic Tests", () => {
                     }
                 }
                 done();
+
             }, 60000);
 
             for (let test_idx = 0; test_idx < 25; ++test_idx) {
@@ -505,6 +551,7 @@ describe("ERC721Basic Tests", () => {
         describe("safeTransferFrom(address, address, uint256)", () => {
 
             const random_transfer_to_receiver = async (done) => {
+
                 let found = false;
                 while (!found) {
                     const account_idx = Math.floor(Math.random() * 10);
@@ -540,9 +587,11 @@ describe("ERC721Basic Tests", () => {
                         done(e);
                     }
                 }
+
             };
 
             const random_transfer_to_users = async (done) => {
+
                 let found = false;
                 while (!found) {
                     const account_idx = Math.floor(Math.random() * 10);
@@ -577,6 +626,7 @@ describe("ERC721Basic Tests", () => {
                         done(e);
                     }
                 }
+
             };
 
             for (let test_idx = 0; test_idx < 25; ++test_idx) {
@@ -588,6 +638,7 @@ describe("ERC721Basic Tests", () => {
             }
 
             test("Invalid Transfer #1: Not mine", async (done) => {
+
                 let found = false;
                 while (!found) {
                     const account_idx = Math.floor(Math.random() * 10);
@@ -622,9 +673,11 @@ describe("ERC721Basic Tests", () => {
                         done();
                     }
                 }
+
             });
 
             test("Invalid Transfer #2: Approval Replay", async (done) => {
+
                 let approval_idx = Math.floor(Math.random() * Object.keys(approvals).length);
                 const id = Object.keys(approvals)[approval_idx];
                 const {from, to} = approvals[id];
@@ -652,7 +705,8 @@ describe("ERC721Basic Tests", () => {
                     output += "✓\n";
                     done();
                 }
-            })
+
+            });
 
         });
 
@@ -724,44 +778,59 @@ describe("ERC721Basic Tests", () => {
             }, 60000);
 
         })
+
     });
 
     describe("ERC721Enumerable Tests", () => {
 
-        test("totalSupply()", async (done) => {
+        describe("totalSupply()", () => {
 
-            const remote_amount = (await Ticket721.totalSupply({from: coinbase})).toNumber();
-            if (remote_amount !== total)
-                done(new Error("Invalid remote total amount"));
-            else
-                done();
+            test("Recover total supply and compare with local", async (done) => {
 
-        });
+                const remote_amount = (await Ticket721.totalSupply({from: coinbase})).toNumber();
+                if (remote_amount !== total)
+                    done(new Error("Invalid remote total amount"));
+                else
+                    done();
 
-        test("tokenByIndex(uint256)", async (done) => {
-
-            if ((await Ticket721.tokenByIndex(0, {from: coinbase})).toNumber() !== 1)
-                done(new Error("Invalid Returned index"));
-            else
-                done();
+            });
 
         });
 
-        test("tokenOfOwnerByIndex(address, uint256)", async (done) => {
+        describe("tokenByIndex(uint256)", () => {
 
-            for (let account_idx = 0; account_idx < accounts.length; ++account_idx) {
-                const account = accounts[account_idx];
-                for (let id_idx = 0; id_idx < summary[account].ids.length; ++id_idx) {
-                    const res = (await Ticket721.tokenOfOwnerByIndex(account, id_idx, {from: account})).toNumber();
-                    if (res !== parseInt(summary[account].ids[id_idx].id)) {
-                        console.log(res, parseInt(summary[account].ids[id_idx].id));
-                        done(new Error("Invalid value for required index"));
-                        return;
+            test("Check if return is coherent", async (done) => {
+
+                if ((await Ticket721.tokenByIndex(0, {from: coinbase})).toNumber() !== 1)
+                    done(new Error("Invalid Returned index"));
+                else
+                    done();
+
+            });
+
+        });
+
+        describe("tokenOfOwnerByIndex(address, uint256)", () => {
+
+            test("Check every single account", async (done) => {
+
+                for (let account_idx = 0; account_idx < accounts.length; ++account_idx) {
+                    const account = accounts[account_idx];
+                    for (let id_idx = 0; id_idx < summary[account].ids.length; ++id_idx) {
+                        const res = (await Ticket721.tokenOfOwnerByIndex(account, id_idx, {from: account})).toNumber();
+                        if (res !== parseInt(summary[account].ids[id_idx].id)) {
+                            console.log(res, parseInt(summary[account].ids[id_idx].id));
+                            done(new Error("Invalid value for required index"));
+                            return;
+                        }
                     }
                 }
-            }
-            done();
+                done();
 
-        }, 60000);
+            }, 60000);
+
+        });
+
     });
+
 });
