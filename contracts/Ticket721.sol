@@ -40,7 +40,21 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     bytes4(keccak256('tokenURI(uint256)'));
 
     bytes4 public constant INTERFACE_SIGNATURE_Ticket721 =
-    bytes4(keccak256('getTicketPrice(uint256)'));
+    bytes4(keccak256('getDefaultTicketPrice()')) ^
+    bytes4(keccak256('getTicketPrice(uint256)')) ^
+    bytes4(keccak256('setTicketPrice(uint256,uint256)')) ^
+    bytes4(keccak256('setTokenURI(string)')) ^
+    bytes4(keccak256('setDelegateMinter(address)')) ^
+    bytes4(keccak256('removeDelegateMinter()')) ^
+    bytes4(keccak256('mint(address,address)')) ^
+    bytes4(keccak256('mintWithCustomPrice(address,address,uint256)')) ^
+    bytes4(keccak256('disableTicket(uint256)')) ^
+    bytes4(keccak256('enableTicket(uint256)')) ^
+    bytes4(keccak256('increaseMaxTicketAmount(uint256)')) ^
+    bytes4(keccak256('maxTicketCount()')) ^
+    bytes4(keccak256('openSale(uint256)')) ^
+    bytes4(keccak256('closeSale(uint256)')) ^
+    bytes4(keccak256('buy(uint256)'));
 
     string private _name;
     string private _symbol;
@@ -72,10 +86,18 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     }
 
     function getTicketPrice(uint256 _tokenId) public view returns (uint256) {
-        require(_tokenId > 0);
+        require(exists(_tokenId));
         if (_custom_price_by_ticket[_tokenId] != 0)
             return _custom_price_by_ticket[_tokenId];
         return _ticket_price;
+    }
+
+    function setTicketPrice(uint256 _tokenId, uint256 _newPrice) public onlyDelegateMinter {
+        require(exists(_tokenId));
+        if (_newPrice == _ticket_price)
+            _custom_price_by_ticket[_tokenId] = 0;
+        else
+            _custom_price_by_ticket[_tokenId] = _newPrice;
     }
 
     function setTokenURI(string new_uri) public onlyOwner {
@@ -109,24 +131,28 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         return (tick_idx);
     }
 
-    //   function mint(address _plugged, address _owner, uint256 custom_price) public onlyDelegateMinter returns (uint256) {
-    //       require(_owner != address(0));
-    //       require(_tickets.length + 1 < _max_ticket_count);
-    //       uint tick_idx = _tickets.push(Ticket({plugged: _plugged, active: true})) - 1;
-    //       _custom_price_by_ticket[tick_idx] = custom_price;
-    //       _owner_by_ticket[tick_idx] = this;
-    //       _index_by_ticket[tick_idx] = _ticket_list_by_owner[this].push(tick_idx) - 1;
-    //       return (tick_idx);
-    //   }
+    function mintWithCustomPrice(address _plugged, address _owner, uint256 custom_price) public onlyDelegateMinter payable returns (uint256) {
+        require(_owner != address(0));
+        require(_tickets.length + 1 < _max_ticket_count);
+        require(msg.value >= _ticket_price);
+        uint tick_idx = _tickets.push(Ticket({plugged: _plugged, active: true})) - 1;
+        _custom_price_by_ticket[tick_idx] = custom_price;
+        _owner_by_ticket[tick_idx] = _owner;
+        _index_by_ticket[tick_idx] = _ticket_list_by_owner[_owner].push(tick_idx) - 1;
+        if (msg.value > _ticket_price) {
+            _owner.transfer(msg.value - _ticket_price);
+        }
+        return (tick_idx);
+    }
 
     function disableTicket(uint256 _tokenId) public onlyDelegateMinter {
-        require(_tokenId != 0);
+        require(exists(_tokenId));
         require(_tickets[_tokenId].active == true);
         _tickets[_tokenId].active = false;
     }
 
     function enableTicket(uint256 _tokenId) public onlyDelegateMinter {
-        require(_tokenId != 0);
+        require(exists(_tokenId));
         require(_tickets[_tokenId].active == false);
         _tickets[_tokenId].active = false;
     }
@@ -136,28 +162,26 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         _max_ticket_count = SafeMath.add(_max_ticket_count, amount);
     }
 
-    function ticketPrice() public view returns (uint256) {
-        return _ticket_price;
-    }
-
     function maxTicketCount() public view returns (uint256) {
         return _max_ticket_count;
     }
 
     function openSale(uint256 ticketId) public {
+        require(exists(ticketId));
         require(ownerOf(ticketId) == msg.sender);
 
         _open_by_ticket[ticketId] = true;
     }
 
     function closeSale(uint256 ticketId) public {
+        require(exists(ticketId));
         require(ownerOf(ticketId) == msg.sender);
 
         _open_by_ticket[ticketId] = false;
     }
 
     function buy(uint256 ticketId) public payable {
-        require(ticketId != 0);
+        require(exists(ticketId));
         require(msg.sender != ownerOf(ticketId));
         require(msg.value >= getTicketPrice(ticketId));
 
@@ -170,7 +194,8 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         return ((interfaceID == INTERFACE_SIGNATURE_ERC165)
         || (interfaceID == INTERFACE_SIGNATURE_ERC721Basic)
         || (interfaceID == INTERFACE_SIGNATURE_ERC721Enumerable)
-        || (interfaceID == INTERFACE_SIGNATURE_ERC721Metadata));
+        || (interfaceID == INTERFACE_SIGNATURE_ERC721Metadata)
+        || (interfaceID == INTERFACE_SIGNATURE_Ticket721));
     }
 
     // ERC721Metadata Implementation
@@ -199,7 +224,7 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
         uint256 walk_idx = 0;
         for (uint256 idx = 0; idx < _ticket_list_by_owner[_owner].length; idx++) {
-            if (_ticket_list_by_owner[_owner][idx] != 0) {
+            if (_ticket_list_by_owner[_owner][idx] != 0 && _tickets[_ticket_list_by_owner[_owner][idx]].active) {
                 if (walk_idx == _index)
                     return (_ticket_list_by_owner[_owner][idx]);
                 ++walk_idx;
@@ -229,14 +254,13 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     function balanceOf(address _owner) public view returns (uint256) {
         uint256 ret = 0;
         for (uint256 idx = 0; idx < _ticket_list_by_owner[_owner].length; ++idx) {
-            if (_ticket_list_by_owner[_owner][idx] != 0)
+            if (_ticket_list_by_owner[_owner][idx] != 0 && _tickets[_ticket_list_by_owner[_owner][idx]].active)
                 ++ret;
         }
         return ret;
     }
 
     function ownerOf(uint256 _tokenId) public view returns (address _owner) {
-        require(_tokenId != 0);
         require(exists(_tokenId));
 
         return _owner_by_ticket[_tokenId];
@@ -244,11 +268,11 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
     function exists(uint256 _tokenId) public view returns (bool _exists) {
         require(_tokenId != 0);
-        return (_owner_by_ticket[_tokenId] != address(0));
+        return (_owner_by_ticket[_tokenId] != address(0) && _tickets[_tokenId].active);
     }
 
     function approve(address _to, uint256 _tokenId) public {
-        require(_tokenId != 0);
+        require(exists(_tokenId));
         require(_to != msg.sender);
         require(msg.sender == ownerOf(_tokenId));
 
@@ -258,7 +282,6 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     }
 
     function getApproved(uint256 _tokenId) public view returns (address) {
-        require(_tokenId != 0);
         require(exists(_tokenId));
 
         return (_approved_by_ticket[_tokenId]);
@@ -273,7 +296,7 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     }
 
     function transferFrom(address _from, address _to, uint256 _tokenId) public {
-        require(_tokenId != 0);
+        require(exists(_tokenId));
         require(_from == msg.sender || _approved_by_ticket[_tokenId] == msg.sender);
         require(_owner_by_ticket[_tokenId] == _from);
         require(_to != address(0));
