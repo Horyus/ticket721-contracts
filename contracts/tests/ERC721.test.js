@@ -827,7 +827,7 @@ describe("ERC721Basic Tests", () => {
                 }
                 done();
 
-            }, 60000);
+            }, 300000);
 
         });
 
