@@ -17,6 +17,8 @@ let total;
 let approvals = {};
 let transfers = {};
 let custom_price = {};
+let sale = {};
+let close = {};
 
 const _describe = () => {};
 
@@ -271,9 +273,13 @@ describe("ERC721 Tests", () => {
                         to_idx = Math.floor(Math.random() * 10);
                     const account = Object.keys(summary)[account_idx];
                     const to = Object.keys(summary)[to_idx];
-                    const id = summary[account].ids[Math.floor(Math.random() * summary[account].ids.length)].id;
+                    const id_idx = Math.floor(Math.random() * summary[account].ids.length);
+                    const id = summary[account].ids[id_idx].id;
                     if (approvals[id]) {
                         continue;
+                    }
+                    if (account_idx === 0 && id_idx === 0) {
+                        continue ;
                     }
                     combination_found = true;
                     output += ("approves(" + to + ", " + id + ", {from: " + account + "}" + ") \tshouldn't revert ");
@@ -518,7 +524,7 @@ describe("ERC721 Tests", () => {
                     done();
                     return ;
                 }
-                let id_idx = Math.floor(Math.random() * (summary[account].ids.length));
+                let id_idx = 0;
                 const id = summary[account].ids[id_idx].id;
                 try {
                     output += ("transferFrom(" + account + ", " + to + ", " + id + ") from " + accounts[1] + " \tshouldn't revert ");
@@ -895,7 +901,7 @@ describe("Ticket721 Tests", () => {
                 const account_idx = Math.floor(Math.random() * 10);
                 const account = Object.keys(summary)[account_idx];
 
-                const random_price = Math.floor(Math.random() * 1000000000000);
+                const random_price = Math.floor(Math.random() * 10000000);
 
                 if (!summary[account].ids.length) {
                     continue;
@@ -934,9 +940,13 @@ describe("Ticket721 Tests", () => {
         test("Check previously edited prices", async (done) => {
 
             for (let price_idx = 0; price_idx < Object.keys(custom_price).length; ++price_idx) {
-                if ((await Ticket721.getTicketPrice(Object.keys(custom_price)[price_idx])) != custom_price[Object.keys(custom_price)[price_idx]].toString())
+                output += ("getTicketPrice(" + Object.keys(custom_price)[price_idx] + ") \tshouldn't revert ");
+                if ((await Ticket721.getTicketPrice(Object.keys(custom_price)[price_idx])) != custom_price[Object.keys(custom_price)[price_idx]].toString()) {
+                    output += "✗\n";
                     done(new Error("Invalid remote price"));
+                }
             }
+            output += "✓\n";
             done();
         });
 
@@ -956,10 +966,14 @@ describe("Ticket721 Tests", () => {
                     continue
                 }
                 found = true;
-                if ((await Ticket721.getTicketPrice(id)).toString() != (await Ticket721.getDefaultTicketPrice()).toString())
+                output += ("getTicketPrice(" + id + ") \tshouldn't revert ");
+                if ((await Ticket721.getTicketPrice(id)).toString() != (await Ticket721.getDefaultTicketPrice()).toString()) {
+                    output += "✗\n";
                     done(new Error("Invalid default price"));
-                else
+                } else {
+                    output += "✓\n";
                     done();
+                }
             }
 
 
@@ -969,13 +983,103 @@ describe("Ticket721 Tests", () => {
 
     describe("openSale(uint256)", () => {
 
+        const sale_opener = async (done) => {
+
+            let found = false;
+            while (!found) {
+                const account_idx = Math.floor(Math.random() * 10);
+                const account = Object.keys(summary)[account_idx];
+
+                if (!summary[account].ids.length) {
+                    continue;
+                }
+                let id_idx = Math.floor(Math.random() * (summary[account].ids.length));
+                const id = summary[account].ids[id_idx].id;
+                if (sale[id]) {
+                    continue
+                }
+                sale[id] = true;
+                found = true;
+                try {
+                    output += ("openSale(" + id + ") from " + account + " \tshouldn't revert ");
+                    await Ticket721.openSale(id, {from: account});
+                    output += "✓\n";
+                    done();
+                } catch (e) {
+                    output += "✗\n";
+                    done(e);
+                }
+            }
+        };
+
+        for (let test_idx = 0; test_idx < 50; ++test_idx) {
+            test("Random Sale Opening #" + (test_idx + 1), sale_opener);
+        }
+
     });
 
     describe("closeSale(uint256)", () => {
 
+        const sale_closer = async (done) => {
+
+            let found = false;
+            while (!found) {
+                const id = Object.keys(sale)[Math.floor(Math.random() * Object.keys(sale).length)];
+                let owner;
+                loop:
+                    for (let account_idx = 0; account_idx < Object.keys(summary).length; ++account_idx) {
+                        for (let id_idx = 0; id_idx < summary[Object.keys(summary)[account_idx]].ids.length; ++id_idx) {
+                            if (summary[Object.keys(summary)[account_idx]].ids[id_idx].id.toString() === id.toString()) {
+                                owner = Object.keys(summary)[account_idx];
+                                break loop;
+                            }
+                        }
+                    }
+                if (!owner || close[id]) {
+                    continue ;
+                }
+                close[id] = true;
+                sale[id] = false;
+                found = true;
+                try {
+                    output += ("closeSale(" + id + ") from " + owner + " \tshouldn't revert ");
+                    await Ticket721.closeSale(id, {from: owner});
+                    output += "✓\n";
+                    done();
+                } catch (e) {
+                    output += "✗\n";
+                    done(e);
+                }
+            }
+        };
+
+        for (let test_idx = 0; test_idx < 25; ++test_idx) {
+            test("Random Sale Closing #" + (test_idx + 1), sale_closer);
+        }
+
     });
 
     describe("buy(uint256)", () => {
+
+        test("Buy all open sales", async (done) => {
+
+            try {
+                for (let sale_idx = 0; sale_idx < Object.keys(sale).length; ++sale_idx) {
+                    if (sale[Object.keys(sale)[sale_idx]]) {
+                        const price = await Ticket721.getTicketPrice(Object.keys(sale)[sale_idx], {from: accounts[0]});
+                        output += ("buy(" + Object.keys(sale)[sale_idx] + ") from " + accounts[0] + " \tshouldn't revert ");
+                        const gas = Ticket721.buy.estimateGas(Object.keys(sale)[sale_idx], {from: accounts[0], value: price});
+                        await Ticket721.buy(Object.keys(sale)[sale_idx], {from: accounts[0], value: price, gas: gas});
+                        output += "✓\n";
+                    }
+                }
+                done();
+            } catch (e) {
+                output += "✗\n";
+                done(e);
+            }
+
+        });
 
     });
 
