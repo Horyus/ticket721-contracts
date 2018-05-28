@@ -442,13 +442,13 @@ describe("ERC721 Tests", () => {
 
         describe("setApprovalForAll(address, bool)", () => {
 
-            test("Test automatic revert", async (done) => {
+            test("Set approval for account #1 on account #0", async (done) => {
 
                 try {
-                    await Ticket721.setApprovalForAll(accounts[0], true, {from: coinbase});
-                    done(new Error("Should revert: it didn't"));
-                } catch (e) {
+                    await Ticket721.setApprovalForAll(accounts[1], true, {from: coinbase});
                     done();
+                } catch (e) {
+                    done(new Error("Shouldn't revert: it did"));
                 }
 
             });
@@ -459,10 +459,9 @@ describe("ERC721 Tests", () => {
 
             test("Test automatic revert", async (done) => {
 
-                try {
-                    await Ticket721.isApprovedForAll(accounts[0], accounts[1], {from: coinbase});
-                    done(new Error("Should revert: it didn't"));
-                } catch (e) {
+                if ((await Ticket721.isApprovedForAll(accounts[0], accounts[1], {from: coinbase})) === false) {
+                    done(new Error("Should return true"));
+                } else {
                     done();
                 }
 
@@ -491,7 +490,7 @@ describe("ERC721 Tests", () => {
                     let id_idx = Math.floor(Math.random() * (summary[account].ids.length));
                     const id = summary[account].ids[id_idx].id;
                     try {
-                        output += ("transferFrom(" + account + ", " + to + ", " + id + ") \tshouldn't revert ");
+                        output += ("transferFrom(" + account + ", " + to + ", " + id + ") from " + account + " \tshouldn't revert ");
                         const call_gas = await Ticket721.transferFrom.estimateGas(account, to, id, {
                             from: account
                         });
@@ -511,6 +510,36 @@ describe("ERC721 Tests", () => {
 
             };
 
+            test("Operator #1 transfers #0", async (done) => {
+
+                const account = accounts[0];
+                const to = accounts[1];
+                if (!summary[account].ids.length) {
+                    done();
+                    return ;
+                }
+                let id_idx = Math.floor(Math.random() * (summary[account].ids.length));
+                const id = summary[account].ids[id_idx].id;
+                try {
+                    output += ("transferFrom(" + account + ", " + to + ", " + id + ") from " + accounts[1] + " \tshouldn't revert ");
+                    const call_gas = await Ticket721.transferFrom.estimateGas(account, to, id, {
+                        from: accounts[1]
+                    });
+                    await Ticket721.transferFrom(account, to, id, {from: accounts[1], gas: call_gas * 2});
+                    summary[to].ids.push({...summary[account].ids[id_idx]});
+                    summary[account].ids = summary[account].ids.filter((elem, idx) => idx !== id_idx);
+                    ++summary[to].amount;
+                    --summary[account].amount;
+                    transfers[id] = to;
+                    output += "✓\n";
+                    done();
+                } catch (e) {
+                    output += "✗\n";
+                    done(e);
+                }
+
+            });
+
             test("Transfer all previously approved tokens", async (done) => {
 
                 for (let approval_idx = 0; approval_idx < Object.keys(approvals).length; ++approval_idx) {
@@ -524,7 +553,7 @@ describe("ERC721 Tests", () => {
                         }
                     }
                     try {
-                        output += ("transferFrom(" + from + ", " + to + ", " + id + ") \tshouldn't revert ");
+                        output += ("transferFrom(" + from + ", " + to + ", " + id + ") from " + to + " \tshouldn't revert ");
                         const call_gas = await Ticket721.transferFrom.estimateGas(from, to, id, {
                             from: to
                         });
@@ -569,7 +598,7 @@ describe("ERC721 Tests", () => {
                     let id_idx = Math.floor(Math.random() * (summary[account].ids.length));
                     const id = summary[account].ids[id_idx].id;
                     try {
-                        output += ("safeTransferFrom(" + account + ", " + to + ", " + id + ") \tshouldn't revert ");
+                        output += ("safeTransferFrom(" + account + ", " + to + ", " + id + ") from " + account + " \tshouldn't revert ");
                         const call_gas = await Ticket721.safeTransferFrom.estimateGas(account, to, id, "", {
                             from: account
                         });
@@ -613,7 +642,7 @@ describe("ERC721 Tests", () => {
                     let id_idx = Math.floor(Math.random() * (summary[account].ids.length));
                     const id = summary[account].ids[id_idx].id;
                     try {
-                        output += ("safeTransferFrom(" + account + ", " + to + ", " + id + ") \tshouldn't revert ");
+                        output += ("safeTransferFrom(" + account + ", " + to + ", " + id + ") from " + account + " \tshouldn't revert ");
                         const call_gas = await Ticket721.safeTransferFrom.estimateGas(account, to, id, "", {
                             from: account
                         });
@@ -661,7 +690,7 @@ describe("ERC721 Tests", () => {
                     let id_idx = Math.floor(Math.random() * (summary[account].ids.length));
                     const id = summary[account].ids[id_idx].id;
                     try {
-                        output += ("safeTransferFrom(" + to + ", " + account + ", " + id + ") \tshould revert ");
+                        output += ("safeTransferFrom(" + to + ", " + account + ", " + id + ") from " + account + " \tshouldn't revert ");
                         const call_gas = await Ticket721.safeTransferFrom.estimateGas(to, account, id, "", {
                             from: account
                         });
@@ -694,7 +723,7 @@ describe("ERC721 Tests", () => {
                     }
                 }
                 try {
-                    output += ("safeTransferFrom(" + from + ", " + to + ", " + id + ") \tshouldn't revert ");
+                    output += ("safeTransferFrom(" + from + ", " + to + ", " + id + ") from " + to + " \tshould revert ");
                     const call_gas = await Ticket721.safeTransferFrom.estimateGas(from, to, id, "", {
                         from: to
                     });
@@ -733,7 +762,7 @@ describe("ERC721 Tests", () => {
                     let id_idx = Math.floor(Math.random() * (summary[account].ids.length));
                     const id = summary[account].ids[id_idx].id;
                     try {
-                        output += ("safeTransferFrom(" + account + ", " + to + ", " + id + ", " + data + ") \tshouldn't revert ");
+                        output += ("safeTransferFrom(" + account + ", " + to + ", " + id + ", " + data + ") from " + account + " \tshouldn't revert ");
                         const call_gas = await Ticket721.safeTransferFrom.estimateGas(account, to, id, "", {
                             from: account
                         });
@@ -937,5 +966,18 @@ describe("Ticket721 Tests", () => {
         });
 
     });
+
+    describe("openSale(uint256)", () => {
+
+    });
+
+    describe("closeSale(uint256)", () => {
+
+    });
+
+    describe("buy(uint256)", () => {
+
+    });
+
 });
 
