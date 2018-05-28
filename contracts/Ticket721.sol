@@ -66,6 +66,9 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         bool    active;
     }
 
+    event Sale(address indexed _owner, uint256 _tokenId);
+    event Buy(address indexed _buyer, uint256 _tokenId);
+
     Ticket[] private _tickets;
 
     function Ticket721(string name, string symbol, uint256 ticket_price, uint256 max_ticket_count) public {
@@ -171,6 +174,8 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         require(msg.sender == ownerOf(ticketId) || _approval_for_all_by_owner[ownerOf(ticketId)][msg.sender]);
 
         _open_by_ticket[ticketId] = true;
+
+        emit Sale(msg.sender, ticketId);
     }
 
     function closeSale(uint256 ticketId) public {
@@ -189,6 +194,7 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         _approved_by_ticket[ticketId] = msg.sender;
         safeTransferFrom(ownerOf(ticketId), msg.sender, ticketId);
         _open_by_ticket[ticketId] = false;
+        emit Buy(msg.sender, ticketId);
     }
 
     // ERC165 Implementation
@@ -293,6 +299,8 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     function setApprovalForAll(address _operator, bool _approved) public {
         require(_approval_for_all_by_owner[msg.sender][_operator] != _approved);
         _approval_for_all_by_owner[msg.sender][_operator] = _approved;
+
+        emit ERC721Basic.ApprovalForAll(msg.sender, _operator, _approved);
     }
 
     function isApprovedForAll(address _owner, address _operator) public view returns (bool) {
