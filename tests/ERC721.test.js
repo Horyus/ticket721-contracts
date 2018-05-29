@@ -848,6 +848,22 @@ describe("ERC721 Tests", () => {
 
 });
 
+describe("Ticket721DelegateMinter Implem Tests", () => {
+
+    test("getDelegateMinterMetadata", async (done) => {
+
+        try {
+            const ret = await Ticket721Train.getDelegateMinterMetadata();
+            JSON.parse(ret);
+            done();
+        } catch (e) {
+            done(e);
+        }
+
+    });
+
+});
+
 describe("Ticket721 Tests", () => {
 
     afterAll(() => {
@@ -945,8 +961,8 @@ describe("Ticket721 Tests", () => {
                     output += "✗\n";
                     done(new Error("Invalid remote price"));
                 }
+                output += "✓\n";
             }
-            output += "✓\n";
             done();
         });
 

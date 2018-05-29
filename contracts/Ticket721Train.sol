@@ -1,8 +1,9 @@
 pragma solidity ^0.4.0;
 
 import './Ticket721.sol';
+import './Ticket721DelegateMinter.sol';
 
-contract Ticket721Train {
+contract Ticket721Train is Ticket721DelegateMinter {
 
     Ticket721 _ticket;
 
@@ -12,7 +13,8 @@ contract Ticket721Train {
     }
     mapping(uint256 => Infos) private _infos;
 
-    function Ticket721Train(address ticket) public {
+    function Ticket721Train(address ticket, string metadata) public {
+        _metadata = metadata;
         _ticket = Ticket721(ticket);
     }
 
@@ -25,5 +27,15 @@ contract Ticket721Train {
     function get(uint256 ticket_id) public view returns (string, string) {
         require(ticket_id > 0);
         return (_infos[ticket_id].first_name, _infos[ticket_id].last_name);
+    }
+
+    string private _metadata;
+
+    function setDelegateMinterMetadata(string metadata) public {
+        _metadata = metadata;
+    }
+
+    function getDelegateMinterMetadata() public view returns (string) {
+        return (_metadata);
     }
 }
