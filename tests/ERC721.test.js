@@ -32,15 +32,15 @@ describe("ERC721 Tests", () => {
                 provider, arguments
             );
         };
-        const _Ticket721 = TruffleContracts(require("../../build/contracts/Ticket721.json"));
+        const _Ticket721 = TruffleContracts(require("../build/contracts/Ticket721.json"));
         _Ticket721.setProvider(provider);
         _Ticket721.deployed().then(d_Ticket721 => {
             Ticket721 = d_Ticket721;
-            const _Ticket721Train = TruffleContracts(require("../../build/contracts/Ticket721Train.json"));
+            const _Ticket721Train = TruffleContracts(require("../build/contracts/Ticket721Train.json"));
             _Ticket721Train.setProvider(provider);
             _Ticket721Train.deployed().then(d_Ticket721Train => {
                 Ticket721Train = d_Ticket721Train;
-                const _Ticket721TestReceiver = TruffleContracts(require("../../build/contracts/Ticket721TestReceiver"));
+                const _Ticket721TestReceiver = TruffleContracts(require("../build/contracts/Ticket721TestReceiver"));
                 _Ticket721TestReceiver.setProvider(provider);
                 _Ticket721TestReceiver.deployed().then(d_Ticket721TestReceiver => {
                     Ticket721TestReceiver = d_Ticket721TestReceiver;
