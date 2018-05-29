@@ -40,6 +40,7 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     bytes4(keccak256('tokenURI(uint256)'));
 
     bytes4 public constant INTERFACE_SIGNATURE_Ticket721 =
+    bytes4(keccak256('setStatus(bool)')) ^
     bytes4(keccak256('getDefaultTicketPrice()')) ^
     bytes4(keccak256('getTicketPrice(uint256)')) ^
     bytes4(keccak256('setTicketPrice(uint256,uint256)')) ^
@@ -72,6 +73,8 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     Ticket[] private _tickets;
 
     function Ticket721(string name, string symbol, uint256 ticket_price, uint256 max_ticket_count) public {
+        Ownable.transferOwnership(tx.origin);
+        _running = false;
         _name = name;
         _symbol = symbol;
         _ticket_price = ticket_price;
@@ -80,10 +83,16 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         _tickets.push(Ticket({plugged: address(0), active: false}));
     }
 
+    bool _running;
     bool _delegate_minter_active;
     address _delegate_minter;
 
     // Ticket721 Methods
+
+    function setStatus(bool status) public onlyOwner {
+        _running = status;
+    }
+
     function getDefaultTicketPrice() public view returns (uint256) {
         return _ticket_price;
     }
