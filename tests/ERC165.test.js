@@ -15,7 +15,7 @@ describe("ERC165 Tests", () => {
             );
         };
 
-        const _Ticket721 = TruffleContracts(require("../../build/contracts/Ticket721.json"));
+        const _Ticket721 = TruffleContracts(require("../build/contracts/Ticket721.json"));
         _Ticket721.setProvider(provider);
         Ticket721 = await _Ticket721.deployed();
 
