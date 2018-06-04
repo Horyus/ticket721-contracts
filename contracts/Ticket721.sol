@@ -71,9 +71,11 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     event Buy(address indexed _buyer, uint256 _tokenId);
 
     Ticket[] private _tickets;
+    string public infos;
 
-    function Ticket721(string name, string symbol, uint256 ticket_price, uint256 max_ticket_count) public {
+    function Ticket721(string name, string symbol, uint256 ticket_price, uint256 max_ticket_count, string _infos) public {
         Ownable.transferOwnership(tx.origin);
+        infos = _infos;
         _running = false;
         _name = name;
         _symbol = symbol;

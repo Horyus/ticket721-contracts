@@ -5,5 +5,5 @@ module.exports = function(deployer) {
     const sale_symbol = "MTK";
     const ticket_count = 100000;
     const ticket_price = web3.toWei('0.005', 'ether');
-    deployer.deploy(Ticket721, sale_name, sale_symbol, ticket_price, ticket_count);
+    deployer.deploy(Ticket721, sale_name, sale_symbol, ticket_price, ticket_count, "INFOS");
 };
