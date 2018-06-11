@@ -33,7 +33,7 @@ describe("ERC721 Tests", () => {
                 provider, arguments
             );
         };
-        const _Ticket721Hub = TruffleContracts(require("../build/contracts/Ticket721HUB.json"));
+        const _Ticket721Hub = TruffleContracts(require("../build/contracts/Ticket721Hub.json"));
         _Ticket721Hub.setProvider(provider);
         const _Ticket721Event = TruffleContracts(require("../build/contracts/Ticket721Event.json"));
         _Ticket721Event.setProvider(provider);
