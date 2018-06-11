@@ -13,7 +13,7 @@ import './zeppelin/AddressUtils.sol';
 import './Ticket721VerifiedAccounts.sol';
 import './Ticket721Controller.sol';
 
-contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Metadata {
+contract Ticket721Verified is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Metadata {
 
     bytes4 public constant INTERFACE_SIGNATURE_ERC165 =
     bytes4(keccak256('supportsInterface(bytes4)'));
@@ -21,12 +21,7 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     // REMOVE COMPUTE AND CHECK INLINE
     bytes4 public constant INTERFACE_SIGNATURE_Ticket721Controller =
     bytes4(keccak256('getTicketPrice(uint256)')) ^
-    bytes4(keccak256('getLinkedSale()')) ^
-    bytes4(keccak256('name()')) ^
-    bytes4(keccak256('getSaleEnd()')) ^
-    bytes4(keccak256('getEventBegin()')) ^
-    bytes4(keccak256('register()')) ^
-    bytes4(keccak256('getEventEnd()'));
+    bytes4(keccak256('getLinkedSale()'));
 
     bytes4 public constant INTERFACE_SIGNATURE_ERC721Basic =
     bytes4(keccak256('balanceOf(address)')) ^
@@ -80,22 +75,21 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     event Buy(address indexed _buyer, uint256 _tokenId);
 
     Ticket[] private _tickets;
+    Ticket721VerifiedAccounts internal verified;
 
-    uint256 internal controller_idx;
-
-    struct ControllerInfos {
-        uint256 controller_id;
+    struct TicketCount {
         uint256 ticket_cap;
         uint256 current_ticket_count;
     }
+    mapping (address => TicketCount) internal ticket_counts;
+    string public infos;
 
-    mapping (address => ControllerInfos) internal ticket_counts;
-
-    function Ticket721(string name, string symbol, Ticket721VerifiedAccounts _verified) public {
+    function Ticket721(string name, string symbol, string _infos, Ticket721VerifiedAccounts _verified) public {
         Ownable.transferOwnership(tx.origin);
+        infos = _infos;
         _name = name;
         _symbol = symbol;
-        controller_idx = 1;
+        verified = _verified;
         _tickets.push(Ticket({plugged: address(0), active: false}));
     }
 
@@ -105,16 +99,19 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         _token_uri = new_uri;
     }
 
-    function register(uint256 amount) public {
+    modifier onlyVerified {
+        require(verified.isValid(tx.origin));
+        _;
+    }
+
+    function register(uint256 amount) public onlyVerified {
         require(ticket_counts[msg.sender].ticket_cap == 0);
         require(AddressUtils.isContract(msg.sender));
         require(Ticket721Controller(msg.sender).supportsInterface(INTERFACE_SIGNATURE_Ticket721Controller));
         ticket_counts[msg.sender].ticket_cap = amount;
-        ticket_counts[msg.sender].controller_id = controller_idx;
-        ++controller_idx;
     }
 
-    function editCap(uint256 amount) public {
+    function editCap(uint256 amount) public onlyVerified {
         require(ticket_counts[msg.sender].ticket_cap != 0);
         require(ticket_counts[msg.sender].ticket_cap != amount);
         require(amount >= ticket_counts[msg.sender].current_ticket_count);
@@ -129,7 +126,6 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     function mint(address _owner) public onlyEvent returns (uint256) {
         require(_owner != address(0));
         require(ticket_counts[msg.sender].current_ticket_count + 1 < ticket_counts[msg.sender].ticket_cap);
-        require(block.timestamp < Ticket721Controller(msg.sender).getSaleEnd());
         uint tick_idx = _tickets.push(Ticket({plugged: msg.sender, active: true})) - 1;
         _owner_by_ticket[tick_idx] = _owner;
         _index_by_ticket[tick_idx] = _ticket_list_by_owner[_owner].push(tick_idx) - 1;
@@ -157,7 +153,6 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         require(_open_by_ticket[ticketId]);
         require(msg.sender != ownerOf(ticketId));
         require(msg.value >= Ticket721Controller(_tickets[ticketId].plugged).getTicketPrice(ticketId));
-        require(block.timestamp < Ticket721Controller(_tickets[ticketId].plugged).getEventBegin());
 
         _approved_by_ticket[ticketId] = msg.sender;
         safeTransferFrom(ownerOf(ticketId), msg.sender, ticketId);
