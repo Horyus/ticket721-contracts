@@ -15,9 +15,12 @@ describe("ERC165 Tests", () => {
             );
         };
 
+        const _Ticket721Hub = TruffleContracts(require("../build/contracts/Ticket721HUB.json"));
+        _Ticket721Hub.setProvider(provider);
+        const Ticket721Hub = await _Ticket721Hub.deployed();
         const _Ticket721 = TruffleContracts(require("../build/contracts/Ticket721.json"));
         _Ticket721.setProvider(provider);
-        Ticket721 = await _Ticket721.deployed();
+        Ticket721 = await _Ticket721.at(await Ticket721Hub.public_ticket_registries(0));
 
         const _Web3 = new Web3(provider);
         coinbase = await _Web3.eth.getCoinbase();
