@@ -12,6 +12,7 @@ import './zeppelin/ownership/Ownable.sol';
 import './zeppelin/AddressUtils.sol';
 import './Ticket721VerifiedAccounts.sol';
 import './Ticket721Controller.sol';
+import './Ticket721HUB.sol';
 
 contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Metadata {
 
@@ -82,6 +83,8 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     Ticket[] private _tickets;
 
     uint256 internal controller_idx;
+    Ticket721HUB internal hub;
+    bool internal should_verify;
 
     struct ControllerInfos {
         uint256 controller_id;
@@ -91,8 +94,10 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
     mapping (address => ControllerInfos) internal ticket_counts;
 
-    function Ticket721(string name, string symbol, Ticket721VerifiedAccounts _verified) public {
+    function Ticket721(string name, string symbol, bool verified) public {
         Ownable.transferOwnership(tx.origin);
+        hub = Ticket721HUB(msg.sender);
+        should_verify = verified;
         _name = name;
         _symbol = symbol;
         controller_idx = 1;
@@ -101,11 +106,18 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
     // Ticket721 Methods
 
+
+
     function setTokenURI(string new_uri) public onlyOwner {
         _token_uri = new_uri;
     }
 
-    function register(uint256 amount) public {
+    modifier verifiedOnly() {
+        require(!should_verify || (should_verify && hub.controller_registered(msg.sender)));
+        _;
+    }
+
+    function register(uint256 amount) public verifiedOnly {
         require(ticket_counts[msg.sender].ticket_cap == 0);
         require(AddressUtils.isContract(msg.sender));
         require(Ticket721Controller(msg.sender).supportsInterface(INTERFACE_SIGNATURE_Ticket721Controller));
@@ -114,19 +126,18 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         ++controller_idx;
     }
 
-    function editCap(uint256 amount) public {
-        require(ticket_counts[msg.sender].ticket_cap != 0);
-        require(ticket_counts[msg.sender].ticket_cap != amount);
-        require(amount >= ticket_counts[msg.sender].current_ticket_count);
-        ticket_counts[msg.sender].ticket_cap = amount;
-    }
-
     modifier onlyEvent {
         require(ticket_counts[msg.sender].ticket_cap != 0);
         _;
     }
 
-    function mint(address _owner) public onlyEvent returns (uint256) {
+    function editCap(uint256 amount) public verifiedOnly onlyEvent {
+        require(ticket_counts[msg.sender].ticket_cap != amount);
+        require(amount >= ticket_counts[msg.sender].current_ticket_count);
+        ticket_counts[msg.sender].ticket_cap = amount;
+    }
+
+    function mint(address _owner) public verifiedOnly onlyEvent returns (uint256) {
         require(_owner != address(0));
         require(ticket_counts[msg.sender].current_ticket_count + 1 < ticket_counts[msg.sender].ticket_cap);
         require(block.timestamp < Ticket721Controller(msg.sender).getSaleEnd());

@@ -1,6 +1,7 @@
 pragma solidity ^0.4.0;
 
 import './Ticket721.sol';
+import './Ticket721Controller.sol';
 import './zeppelin/ownership/Ownable.sol';
 import './Ticket721VerifiedAccounts.sol';
 
@@ -21,11 +22,11 @@ contract Ticket721HUB is Ownable {
     }
 
     function deployPublicRegistry(string _name, string _symbol) public onlyOwner {
-        public_ticket_registries.push(new Ticket721(_name, _symbol, Ticket721VerifiedAccounts(0)));
+        public_ticket_registries.push(new Ticket721(_name, _symbol, false));
     }
 
     function deployVerifiedRegistry(string _name, string _symbol) public onlyOwner {
-        //public_ticket_registries.push(new Ticket721Verified(_name, _symbol));
+        public_ticket_registries.push(new Ticket721(_name, _symbol, true));
     }
 
     modifier onlyVerified() {

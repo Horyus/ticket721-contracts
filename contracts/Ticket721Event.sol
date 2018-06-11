@@ -30,7 +30,6 @@ contract Ticket721Event is Ownable, Ticket721Controller {
         require(_sale_end > block.timestamp);
         require(_event_begin > block.timestamp);
         require(_event_end > _event_begin);
-        Ownable.transferOwnership(tx.origin);
         ticket_cap = _amount;
         linked_sale = _sale;
         ticket_price = _ticket_price;

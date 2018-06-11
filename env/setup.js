@@ -21,7 +21,7 @@ const setup = async () => new Promise((ok, ko) => {
     console.log("| Starting Test Setup                  |");
     console.log("+--------------------------------------+\n");
     global.Server = Ganache.server({
-        gasLimit: 10000000
+        gasLimit: 50000000
     });
     let intervalId = setInterval(() => {
         isPortTaken(8547, (err, status) => {
