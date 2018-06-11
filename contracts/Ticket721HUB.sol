@@ -26,7 +26,7 @@ contract Ticket721HUB is Ownable {
     }
 
     function deployVerifiedRegistry(string _name, string _symbol) public onlyOwner {
-        public_ticket_registries.push(new Ticket721(_name, _symbol, true));
+        verified_ticket_registries.push(new Ticket721(_name, _symbol, true));
     }
 
     modifier onlyVerified() {

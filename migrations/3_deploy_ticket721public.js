@@ -1,4 +1,4 @@
-const Ticket721Hub = artifacts.require("./Ticket721Hub.sol");
+const Ticket721Hub = artifacts.require("./Ticket721HUB.sol");
 const Ticket721Event = artifacts.require("./Ticket721Event.sol");
 const Ticket721VerifiedAccounts = artifacts.require("./Ticket721VerifiedAccounts");
 
