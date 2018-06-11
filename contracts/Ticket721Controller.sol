@@ -1,4 +1,4 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.21;
 
 import './ERC165/ERC165.sol';
 import './zeppelin/ownership/Ownable.sol';

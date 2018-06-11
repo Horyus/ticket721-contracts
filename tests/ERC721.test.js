@@ -583,7 +583,7 @@ describe("ERC721 Tests", () => {
                     const id = summary[account].ids[id_idx].id;
                     try {
                         output += ("safeTransferFrom(" + account + ", " + to + ", " + id + ") from " + account + " \tshouldn't revert ");
-                        const call_gas = await Ticket721.safeTransferFrom.estimateGas(account, to, id, {
+                        const call_gas = await Ticket721.safeTransferFrom.estimateGas(account, to, id, "", {
                             from: account
                         });
                         Ticket721.contract.safeTransferFrom['address,address,uint256'](account, to, id, {from: account, gas: call_gas * 2}, async () => {
@@ -627,7 +627,7 @@ describe("ERC721 Tests", () => {
                     const id = summary[account].ids[id_idx].id;
                     try {
                         output += ("safeTransferFrom(" + account + ", " + to + ", " + id + ") from " + account + " \tshouldn't revert ");
-                        const call_gas = await Ticket721.safeTransferFrom.estimateGas(account, to, id, {
+                        const call_gas = await Ticket721.safeTransferFrom.estimateGas(account, to, id, "", {
                             from: account
                         });
                         Ticket721.contract.safeTransferFrom['address,address,uint256'](account, to, id, {from: account, gas: call_gas * 2}, async () => {
@@ -675,7 +675,7 @@ describe("ERC721 Tests", () => {
                     const id = summary[account].ids[id_idx].id;
                     try {
                         output += ("safeTransferFrom(" + to + ", " + account + ", " + id + ") from " + account + " \tshouldn't revert ");
-                        const call_gas = await Ticket721.safeTransferFrom.estimateGas(to, account, id, {
+                        const call_gas = await Ticket721.safeTransferFrom.estimateGas(to, account, id, "", {
                             from: account
                         });
                         await Ticket721.safeTransferFrom(to, account, id, "", {from: account, gas: call_gas * 2});
@@ -708,7 +708,7 @@ describe("ERC721 Tests", () => {
                 }
                 try {
                     output += ("safeTransferFrom(" + from + ", " + to + ", " + id + ") from " + to + " \tshould revert ");
-                    const call_gas = await Ticket721.safeTransferFrom.estimateGas(from, to, id, {
+                    const call_gas = await Ticket721.safeTransferFrom.estimateGas(from, to, id, "", {
                         from: to
                     });
                     await Ticket721.safeTransferFrom(from, to, id, "", {from: to, gas: call_gas * 2});
@@ -747,7 +747,7 @@ describe("ERC721 Tests", () => {
                     const id = summary[account].ids[id_idx].id;
                     try {
                         output += ("safeTransferFrom(" + account + ", " + to + ", " + id + ", " + data + ") from " + account + " \tshouldn't revert ");
-                        const call_gas = await Ticket721.safeTransferFrom.estimateGas(account, to, id, {
+                        const call_gas = await Ticket721.safeTransferFrom.estimateGas(account, to, id, data, {
                             from: account
                         });
                         Ticket721.contract.safeTransferFrom['address,address,uint256,bytes'](account, to, id, data, {

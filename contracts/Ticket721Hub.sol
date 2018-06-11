@@ -1,32 +1,29 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.21;
 
-import './Ticket721.sol';
 import './Ticket721Controller.sol';
 import './zeppelin/ownership/Ownable.sol';
 import './Ticket721VerifiedAccounts.sol';
 
-contract Ticket721HUB is Ownable {
+contract Ticket721Hub is Ownable {
 
     event Sale(address indexed sale_address, address indexed sale_owner);
 
     Ticket721VerifiedAccounts public account_manager;
     mapping (address => Ticket721Controller[]) public sale_ownership;
     mapping (address => bool) public controller_registered;
-    Ticket721[] public public_ticket_registries;
-    uint public public_registry_idx;
-    Ticket721[] public verified_ticket_registries;
-    uint public verified_registry_idx;
+    address[] public public_ticket_registries;
+    address[] public verified_ticket_registries;
 
-    function Ticket721HUB() public {
+    constructor() public Ownable() {
         account_manager = new Ticket721VerifiedAccounts();
     }
 
-    function deployPublicRegistry(string _name, string _symbol) public onlyOwner {
-        public_ticket_registries.push(new Ticket721(_name, _symbol, false));
+    function addPublicRegistry(address _public) public onlyOwner {
+        public_ticket_registries.push(_public);
     }
 
-    function deployVerifiedRegistry(string _name, string _symbol) public onlyOwner {
-        verified_ticket_registries.push(new Ticket721(_name, _symbol, true));
+    function addVerifiedRegistry(address _verified) public onlyOwner {
+        verified_ticket_registries.push(_verified);
     }
 
     modifier onlyVerified() {

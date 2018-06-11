@@ -1,4 +1,4 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.21;
 
 import './zeppelin/ownership/Ownable.sol';
 
@@ -18,7 +18,7 @@ contract Ticket721VerifiedAccounts is Ownable {
     mapping (address => Profile) public profiles;
     mapping (string => address) internal availability;
 
-    function Ticket721VerifiedAccounts() public {
+    function Ticket721VerifiedAccounts() public Ownable() {
         Ownable.transferOwnership(tx.origin);
     }
 

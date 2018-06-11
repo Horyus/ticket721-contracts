@@ -1,4 +1,4 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.21;
 
 import './Ticket721.sol';
 import './ERC165/ERC165.sol';
@@ -89,6 +89,10 @@ contract Ticket721Event is Ownable, Ticket721Controller {
             msg.sender.transfer(SafeMath.sub(msg.value, ticket_price));
     }
 
+    function register() public onlyOwner {
+        linked_sale.register(ticket_cap);
+    }
+
     // Ticket721Controller
     function getTicketPrice(uint256 _id) public view returns (uint256) {
         require(ticket_infos[_id]);
@@ -115,9 +119,6 @@ contract Ticket721Event is Ownable, Ticket721Controller {
         return event_end;
     }
 
-    function register() public onlyOwner {
-        linked_sale.register(ticket_cap);
-    }
 
     // ERC165
     bytes4 public constant INTERFACE_SIGNATURE_ERC165 =

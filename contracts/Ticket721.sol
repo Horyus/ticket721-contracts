@@ -12,7 +12,7 @@ import './zeppelin/ownership/Ownable.sol';
 import './zeppelin/AddressUtils.sol';
 import './Ticket721VerifiedAccounts.sol';
 import './Ticket721Controller.sol';
-import './Ticket721HUB.sol';
+import './Ticket721Hub.sol';
 
 contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Metadata {
 
@@ -83,7 +83,7 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     Ticket[] private _tickets;
 
     uint256 internal controller_idx;
-    Ticket721HUB internal hub;
+    Ticket721Hub internal hub;
     bool internal should_verify;
 
     struct ControllerInfos {
@@ -95,8 +95,6 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     mapping (address => ControllerInfos) internal ticket_counts;
 
     function Ticket721(string name, string symbol, bool verified) public {
-        Ownable.transferOwnership(tx.origin);
-        hub = Ticket721HUB(msg.sender);
         should_verify = verified;
         _name = name;
         _symbol = symbol;
@@ -106,14 +104,16 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
     // Ticket721 Methods
 
-
+    function setHub(Ticket721Hub _hub) public onlyOwner {
+        hub = _hub;
+    }
 
     function setTokenURI(string new_uri) public onlyOwner {
         _token_uri = new_uri;
     }
 
     modifier verifiedOnly() {
-        require(!should_verify || (should_verify && hub.controller_registered(msg.sender)));
+        require(!should_verify || (should_verify && address(hub) != address(0) && hub.controller_registered(msg.sender)));
         _;
     }
 

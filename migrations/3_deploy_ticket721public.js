@@ -1,17 +1,15 @@
-const Ticket721Hub = artifacts.require("./Ticket721HUB.sol");
+const Ticket721Hub = artifacts.require("./Ticket721Hub.sol");
 const Ticket721Event = artifacts.require("./Ticket721Event.sol");
+const Ticket721 = artifacts.require("./Ticket721.sol");
 const Ticket721VerifiedAccounts = artifacts.require("./Ticket721VerifiedAccounts");
 
 module.exports = function(deployer, network, accounts) {
     let t721h;
-    let coinbase = accounts[0];
-    let account_manager;
     //let name = "Ticket721 | Alpha";
     //let symbol = "T721A";
     let name_public = "Public Ticket721 | Alpha";
     let symbol_public = "PT721A";
     let sale_address;
-    let verified_sale_address;
     const end_sale = new Date(Date.now());
     end_sale.setDate(end_sale.getDate() + 10);
     const event_begin = new Date(Date.now());
@@ -24,7 +22,9 @@ module.exports = function(deployer, network, accounts) {
             t721h = await Ticket721Hub.deployed();
         })
         .then(async () => {
-            await t721h.deployPublicRegistry(name_public, symbol_public);
+            const res = await deployer.deploy(Ticket721, name_public, symbol_public, false);
+            res.setHub(t721h.address);
+            await t721h.addPublicRegistry(res.address);
         })
         .then(async () => {
             sale_address = await t721h.public_ticket_registries(0);
