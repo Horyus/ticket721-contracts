@@ -8,18 +8,7 @@ import './zeppelin/math/SafeMath.sol';
 
 contract Ticket721Event is Ownable, Ticket721Controller {
 
-    Ticket721 public linked_sale;
-    uint256 public ticket_cap;
-    uint256 public ticket_price;
-    uint256 public resale_price;
-    string public data;
-    string internal event_name;
-    uint256 internal sale_end;
-    uint256 internal event_begin;
-    uint256 internal event_end;
-    bool internal registered;
-
-    function Ticket721Event(Ticket721 _sale,
+    constructor(Ticket721 _sale,
         uint256 _amount,
         uint256 _ticket_price,
         string _data,
@@ -40,6 +29,17 @@ contract Ticket721Event is Ownable, Ticket721Controller {
         event_begin = _event_begin;
         event_end = _event_end;
     }
+
+    Ticket721 public linked_sale;
+    uint256 public ticket_cap;
+    uint256 public ticket_price;
+    uint256 public resale_price;
+    string public data;
+    string internal event_name;
+    uint256 internal sale_end;
+    uint256 internal event_begin;
+    uint256 internal event_end;
+    bool internal registered;
 
     function setTicketCap(uint256 _new_ticket_cap) public onlyOwner {
         linked_sale.editCap(_new_ticket_cap);
@@ -119,7 +119,6 @@ contract Ticket721Event is Ownable, Ticket721Controller {
         return event_end;
     }
 
-
     // ERC165
     bytes4 public constant INTERFACE_SIGNATURE_ERC165 =
     bytes4(keccak256('supportsInterface(bytes4)'));
@@ -133,8 +132,8 @@ contract Ticket721Event is Ownable, Ticket721Controller {
     bytes4(keccak256('register()')) ^
     bytes4(keccak256('getEventEnd()'));
 
-    function supportsInterface(bytes4 interfaceID) external view returns (bool) {
-        return ((interfaceID == INTERFACE_SIGNATURE_ERC165)
-        || (interfaceID == INTERFACE_SIGNATURE_Ticket721Controller));
+    function supportsInterface(bytes4 _interface_id) external view returns (bool) {
+        return ((_interface_id == INTERFACE_SIGNATURE_ERC165)
+        || (_interface_id == INTERFACE_SIGNATURE_Ticket721Controller));
     }
 }

@@ -1,13 +1,8 @@
 pragma solidity ^0.4.21;
 
-// https://github.com/fulldecent/erc721-example/blob/master/XXXXOwnership.sol
-
-// TODO Copy zeppelin contracts here to edit deprecated actions
-
 import './zeppelin/token/ERC721/ERC721Receiver.sol';
 import './zeppelin/math/SafeMath.sol';
 import './zeppelin/AddressUtils.sol';
-
 
 contract Ticket721TestReceiver is ERC721Receiver {
 

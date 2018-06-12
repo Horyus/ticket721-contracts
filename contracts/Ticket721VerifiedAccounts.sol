@@ -10,6 +10,10 @@ contract Ticket721VerifiedAccounts is Ownable {
     event ValidateProfile(address indexed _account);
     event RevokeProfile(address indexed _account);
 
+    constructor() public Ownable() {
+        Ownable.transferOwnership(tx.origin);
+    }
+
     struct Profile {
         string id;
         bool valid;
@@ -17,10 +21,6 @@ contract Ticket721VerifiedAccounts is Ownable {
 
     mapping (address => Profile) public profiles;
     mapping (string => address) internal availability;
-
-    function Ticket721VerifiedAccounts() public Ownable() {
-        Ownable.transferOwnership(tx.origin);
-    }
 
     function isValid(address _target) public view returns (bool) {
         return profiles[_target].valid;
