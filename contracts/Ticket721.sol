@@ -1,21 +1,34 @@
 pragma solidity ^0.4.21;
 
-// https://github.com/fulldecent/erc721-example/blob/master/XXXXOwnership.sol
-
-// TODO Copy zeppelin contracts here to edit deprecated actions
-
 import './ERC165/ERC165.sol';
 import './zeppelin/token/ERC721/ERC721.sol';
 import './zeppelin/token/ERC721/ERC721Receiver.sol';
 import './zeppelin/math/SafeMath.sol';
 import './zeppelin/ownership/Ownable.sol';
 import './zeppelin/AddressUtils.sol';
+import './Ticket721VerifiedAccounts.sol';
+import './Ticket721Controller.sol';
+import './Ticket721Hub.sol';
 
+// _____ _      _        _  _____ ____  _
+//|_   _(_) ___| | _____| ||___  |___ \/ |
+//  | | | |/ __| |/ / _ \ __| / /  __) | |
+//  | | | | (__|   <  __/ |_ / /  / __/| |
+//  |_| |_|\___|_|\_\___|\__/_/  |_____|_|
 
 contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Metadata {
 
     bytes4 public constant INTERFACE_SIGNATURE_ERC165 =
     bytes4(keccak256('supportsInterface(bytes4)'));
+
+    bytes4 public constant INTERFACE_SIGNATURE_Ticket721Controller =
+    bytes4(keccak256('getTicketPrice(uint256)')) ^
+    bytes4(keccak256('getLinkedSale()')) ^
+    bytes4(keccak256('name()')) ^
+    bytes4(keccak256('getSaleEnd()')) ^
+    bytes4(keccak256('getEventBegin()')) ^
+    bytes4(keccak256('register()')) ^
+    bytes4(keccak256('getEventEnd()'));
 
     bytes4 public constant INTERFACE_SIGNATURE_ERC721Basic =
     bytes4(keccak256('balanceOf(address)')) ^
@@ -40,212 +53,210 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     bytes4(keccak256('tokenURI(uint256)'));
 
     bytes4 public constant INTERFACE_SIGNATURE_Ticket721 =
-    bytes4(keccak256('setStatus(bool)')) ^
-    bytes4(keccak256('getDefaultTicketPrice()')) ^
-    bytes4(keccak256('getTicketPrice(uint256)')) ^
-    bytes4(keccak256('setTicketPrice(uint256,uint256)')) ^
+    bytes4(keccak256('setHub(address)')) ^
     bytes4(keccak256('setTokenURI(string)')) ^
-    bytes4(keccak256('setDelegateMinter(address)')) ^
-    bytes4(keccak256('removeDelegateMinter()')) ^
-    bytes4(keccak256('mint(address,address)')) ^
-    bytes4(keccak256('mintWithCustomPrice(address,address,uint256)')) ^
-    bytes4(keccak256('disableTicket(uint256)')) ^
-    bytes4(keccak256('enableTicket(uint256)')) ^
-    bytes4(keccak256('increaseMaxTicketAmount(uint256)')) ^
-    bytes4(keccak256('maxTicketCount()')) ^
+    bytes4(keccak256('register(uint256)')) ^
+    bytes4(keccak256('editCap(uint256)')) ^
+    bytes4(keccak256('mint(address)')) ^
     bytes4(keccak256('openSale(uint256)')) ^
     bytes4(keccak256('closeSale(uint256)')) ^
     bytes4(keccak256('buy(uint256)'));
 
-    string private _name;
-    string private _symbol;
-    uint256 private _ticket_price;
-    uint256 private _max_ticket_count;
+    event Sale(address indexed _owner, uint256 _token_id);
+    event Buy(address indexed _buyer, uint256 _token_id);
+    event Register(address indexed _controller);
+
+    /**
+    * @param _name Name of registry.
+    * @param _symbol Symbol of registry.
+    * @param _verified True if only verified accounts can create events.
+    */
+    constructor(string _name, string _symbol, bool _verified) public {
+        should_verify = _verified;
+        internal_name = _name;
+        internal_symbol = _symbol;
+        controller_idx = 1;
+        tickets.push(Ticket({plugged: address(0), active: false}));
+    }
 
     struct Ticket {
         address plugged;
         bool    active;
     }
 
-    event Sale(address indexed _owner, uint256 _tokenId);
-    event Buy(address indexed _buyer, uint256 _tokenId);
-
-    Ticket[] private _tickets;
-    string public infos;
-
-    function Ticket721(string name, string symbol, uint256 ticket_price, uint256 max_ticket_count, string _infos) public {
-        Ownable.transferOwnership(tx.origin);
-        infos = _infos;
-        _running = false;
-        _name = name;
-        _symbol = symbol;
-        _ticket_price = ticket_price;
-        _max_ticket_count = max_ticket_count;
-        _delegate_minter_active = false;
-        _tickets.push(Ticket({plugged: address(0), active: false}));
+    struct ControllerInfos {
+        uint256 controller_id;
+        uint256 ticket_cap;
+        uint256 current_ticket_count;
     }
 
-    bool _running;
-    bool _delegate_minter_active;
-    address _delegate_minter;
+    uint256 internal controller_idx;
+    bool internal should_verify;
+    string internal internal_name;
+    string internal internal_symbol;
+    string internal internal_token_uri;
 
-    // Ticket721 Methods
+    Ticket[] internal tickets;
+    Ticket721Hub internal hub;
 
-    function setStatus(bool status) public onlyOwner {
-        _running = status;
-    }
+    mapping(uint256 => uint256) internal index_by_ticket;
+    mapping(uint256 => address) internal owner_by_ticket;
+    mapping(uint256 => bool) internal open_by_ticket;
+    mapping(uint256 => address) internal approved_by_ticket;
+    mapping(address => uint256[]) internal ticket_list_by_owner;
+    mapping(address => ControllerInfos) internal ticket_counts;
+    mapping(address => mapping(address => bool)) internal approval_for_all_by_owner;
 
-    function getDefaultTicketPrice() public view returns (uint256) {
-        return _ticket_price;
-    }
+    // _____ _      _        _  _____ ____  _
+    //|_   _(_) ___| | _____| ||___  |___ \/ |
+    //  | | | |/ __| |/ / _ \ __| / /  __) | |
+    //  | | | | (__|   <  __/ |_ / /  / __/| |
+    //  |_| |_|\___|_|\_\___|\__/_/  |_____|_|
+    // METHODS
 
-    function getTicketPrice(uint256 _tokenId) public view returns (uint256) {
-        require(exists(_tokenId));
-        if (_custom_price_by_ticket[_tokenId] != 0)
-            return _custom_price_by_ticket[_tokenId];
-        return _ticket_price;
-    }
-
-    function setTicketPrice(uint256 _tokenId, uint256 _newPrice) public onlyDelegateMinter {
-        require(exists(_tokenId));
-        if (_newPrice == _ticket_price)
-            _custom_price_by_ticket[_tokenId] = 0;
-        else
-            _custom_price_by_ticket[_tokenId] = _newPrice;
-    }
-
-    function setTokenURI(string new_uri) public onlyOwner {
-        _token_uri = new_uri;
-    }
-
-    function setDelegateMinter(address _minter) public onlyOwner {
-        _delegate_minter_active = true;
-        _delegate_minter = _minter;
-    }
-
-    function removeDelegateMinter() public onlyOwner {
-        _delegate_minter_active = false;
-    }
-
-    modifier onlyDelegateMinter() {
-        require(msg.sender == owner || (_delegate_minter_active && msg.sender == _delegate_minter));
+    modifier verifiedOnly() {
+        require(!should_verify || (should_verify && address(hub) != address(0) && hub.controller_registered(msg.sender)));
         _;
     }
 
-    function mint(address _plugged, address _owner) public onlyDelegateMinter payable returns (uint256) {
+    modifier onlyEvent {
+        require(ticket_counts[msg.sender].ticket_cap != 0);
+        _;
+    }
+
+    /**
+    * @param _hub Address of the Hub to use.
+    */
+    function setHub(address _hub) public onlyOwner {
+        hub = Ticket721Hub(_hub);
+    }
+
+    /**
+    * @param _new_uri New token_uri to use.
+    */
+    function setTokenURI(string _new_uri) public onlyOwner {
+        internal_token_uri = _new_uri;
+    }
+
+    /**
+    * @param _amount Amount of tickets the sale if going to cap at.
+    */
+    function register(uint256 _amount) public verifiedOnly {
+        require(ticket_counts[msg.sender].ticket_cap == 0);
+        require(AddressUtils.isContract(msg.sender));
+        require(Ticket721Controller(msg.sender).supportsInterface(INTERFACE_SIGNATURE_Ticket721Controller));
+
+        ticket_counts[msg.sender].ticket_cap = _amount;
+        ticket_counts[msg.sender].controller_id = controller_idx;
+        ++controller_idx;
+
+        emit Register(msg.sender);
+    }
+
+    function editCap(uint256 _amount) public verifiedOnly onlyEvent {
+        require(ticket_counts[msg.sender].ticket_cap != _amount);
+        require(_amount >= ticket_counts[msg.sender].current_ticket_count);
+
+        ticket_counts[msg.sender].ticket_cap = _amount;
+    }
+
+    function mint(address _owner) public verifiedOnly onlyEvent returns (uint256) {
         require(_owner != address(0));
-        require(_tickets.length + 1 < _max_ticket_count);
-        require(msg.value >= _ticket_price);
-        uint tick_idx = _tickets.push(Ticket({plugged: _plugged, active: true})) - 1;
-        _owner_by_ticket[tick_idx] = _owner;
-        _index_by_ticket[tick_idx] = _ticket_list_by_owner[_owner].push(tick_idx) - 1;
-        if (msg.value > _ticket_price) {
-            _owner.transfer(msg.value - _ticket_price);
-        }
+        require(ticket_counts[msg.sender].current_ticket_count + 1 < ticket_counts[msg.sender].ticket_cap);
+        require(block.timestamp < Ticket721Controller(msg.sender).getSaleEnd());
+
+        uint tick_idx = tickets.push(Ticket({plugged: msg.sender, active: true})) - 1;
+        owner_by_ticket[tick_idx] = _owner;
+        index_by_ticket[tick_idx] = ticket_list_by_owner[_owner].push(tick_idx) - 1;
+
         return (tick_idx);
     }
 
-    function mintWithCustomPrice(address _plugged, address _owner, uint256 custom_price) public onlyDelegateMinter payable returns (uint256) {
-        require(_owner != address(0));
-        require(_tickets.length + 1 < _max_ticket_count);
-        require(msg.value >= _ticket_price);
-        uint tick_idx = _tickets.push(Ticket({plugged: _plugged, active: true})) - 1;
-        _custom_price_by_ticket[tick_idx] = custom_price;
-        _owner_by_ticket[tick_idx] = _owner;
-        _index_by_ticket[tick_idx] = _ticket_list_by_owner[_owner].push(tick_idx) - 1;
-        if (msg.value > _ticket_price) {
-            _owner.transfer(msg.value - _ticket_price);
-        }
-        return (tick_idx);
+    function openSale(uint256 _token_id) public {
+        require(exists(_token_id));
+        require(msg.sender == ownerOf(_token_id) || approval_for_all_by_owner[ownerOf(_token_id)][msg.sender]);
+
+        open_by_ticket[_token_id] = true;
+
+        emit Sale(msg.sender, _token_id);
     }
 
-    function disableTicket(uint256 _tokenId) public onlyDelegateMinter {
-        require(exists(_tokenId));
-        require(_tickets[_tokenId].active == true);
-        _tickets[_tokenId].active = false;
+    function closeSale(uint256 _token_id) public {
+        require(exists(_token_id));
+        require(msg.sender == ownerOf(_token_id) || approval_for_all_by_owner[ownerOf(_token_id)][msg.sender]);
+
+        open_by_ticket[_token_id] = false;
     }
 
-    function enableTicket(uint256 _tokenId) public onlyDelegateMinter {
-        require(exists(_tokenId));
-        require(_tickets[_tokenId].active == false);
-        _tickets[_tokenId].active = false;
+    function buy(uint256 _token_id) public payable {
+        require(exists(_token_id));
+        require(open_by_ticket[_token_id]);
+        require(msg.sender != ownerOf(_token_id));
+        require(msg.value >= Ticket721Controller(tickets[_token_id].plugged).getTicketPrice(_token_id));
+        require(block.timestamp < Ticket721Controller(tickets[_token_id].plugged).getEventBegin());
+
+        approved_by_ticket[_token_id] = msg.sender;
+        safeTransferFrom(ownerOf(_token_id), msg.sender, _token_id);
+        open_by_ticket[_token_id] = false;
+        if (msg.value > Ticket721Controller(tickets[_token_id].plugged).getTicketPrice(_token_id))
+            msg.sender.transfer(SafeMath.sub(msg.value, Ticket721Controller(tickets[_token_id].plugged).getTicketPrice(_token_id)));
+
+        emit Buy(msg.sender, _token_id);
     }
 
-    function increaseMaxTicketCount(uint256 amount) public onlyOwner {
-        require(amount > 0);
-        _max_ticket_count = SafeMath.add(_max_ticket_count, amount);
+    // _____ ____   ____ _  __  ____
+    //| ____|  _ \ / ___/ |/ /_| ___|
+    //|  _| | |_) | |   | | '_ \___ \
+    //| |___|  _ <| |___| | (_) |__) |
+    //|_____|_| \_\\____|_|\___/____/
+
+    function supportsInterface(bytes4 _interface_id) external view returns (bool) {
+        return ((_interface_id == INTERFACE_SIGNATURE_ERC165)
+        || (_interface_id == INTERFACE_SIGNATURE_ERC721Basic)
+        || (_interface_id == INTERFACE_SIGNATURE_ERC721Enumerable)
+        || (_interface_id == INTERFACE_SIGNATURE_ERC721Metadata)
+        || (_interface_id == INTERFACE_SIGNATURE_Ticket721));
     }
 
-    function maxTicketCount() public view returns (uint256) {
-        return _max_ticket_count;
-    }
+    // _____ ____   ____ _____ ____  _
+    //| ____|  _ \ / ___|___  |___ \/ |
+    //|  _| | |_) | |      / /  __) | |
+    //| |___|  _ <| |___  / /  / __/| |
+    //|_____|_| \_\\____|/_/  |_____|_|
+    // METADATA
 
-    function openSale(uint256 ticketId) public {
-        require(exists(ticketId));
-        require(msg.sender == ownerOf(ticketId) || _approval_for_all_by_owner[ownerOf(ticketId)][msg.sender]);
-
-        _open_by_ticket[ticketId] = true;
-
-        emit Sale(msg.sender, ticketId);
-    }
-
-    function closeSale(uint256 ticketId) public {
-        require(exists(ticketId));
-        require(msg.sender == ownerOf(ticketId) || _approval_for_all_by_owner[ownerOf(ticketId)][msg.sender]);
-
-        _open_by_ticket[ticketId] = false;
-    }
-
-    function buy(uint256 ticketId) public payable {
-        require(exists(ticketId));
-        require(_open_by_ticket[ticketId]);
-        require(msg.sender != ownerOf(ticketId));
-        require(msg.value >= getTicketPrice(ticketId));
-
-        _approved_by_ticket[ticketId] = msg.sender;
-        safeTransferFrom(ownerOf(ticketId), msg.sender, ticketId);
-        _open_by_ticket[ticketId] = false;
-        emit Buy(msg.sender, ticketId);
-    }
-
-    // ERC165 Implementation
-    function supportsInterface(bytes4 interfaceID) external view returns (bool) {
-        return ((interfaceID == INTERFACE_SIGNATURE_ERC165)
-        || (interfaceID == INTERFACE_SIGNATURE_ERC721Basic)
-        || (interfaceID == INTERFACE_SIGNATURE_ERC721Enumerable)
-        || (interfaceID == INTERFACE_SIGNATURE_ERC721Metadata)
-        || (interfaceID == INTERFACE_SIGNATURE_Ticket721));
-    }
-
-    // ERC721Metadata Implementation
     function name() public view returns (string) {
-        return (_name);
+        return (internal_name);
     }
 
     function symbol() public view returns (string) {
-        return (_symbol);
+        return (internal_symbol);
     }
-
-    string private _token_uri;
 
     function tokenURI(uint256) public view returns (string) {
-        return _token_uri;
+        return (internal_token_uri);
     }
 
-    //// EC721Enumerable Implementation
+    // _____ ____   ____ _____ ____  _
+    //| ____|  _ \ / ___|___  |___ \/ |
+    //|  _| | |_) | |      / /  __) | |
+    //| |___|  _ <| |___  / /  / __/| |
+    //|_____|_| \_\\____|/_/  |_____|_|
+    // ENUMERABLE
+
     function totalSupply() public view returns (uint256) {
-        return (_tickets.length - 1);
+        return (tickets.length - 1);
     }
 
     function tokenOfOwnerByIndex(address _owner, uint256 _index) public view returns (uint256) {
         require(_owner != address(0));
-        require(_ticket_list_by_owner[_owner].length > _index);
+        require(ticket_list_by_owner[_owner].length > _index);
 
         uint256 walk_idx = 0;
-        for (uint256 idx = 0; idx < _ticket_list_by_owner[_owner].length; idx++) {
-            if (_ticket_list_by_owner[_owner][idx] != 0 && _tickets[_ticket_list_by_owner[_owner][idx]].active) {
+        for (uint256 idx = 0; idx < ticket_list_by_owner[_owner].length; idx++) {
+            if (ticket_list_by_owner[_owner][idx] != 0 && tickets[ticket_list_by_owner[_owner][idx]].active) {
                 if (walk_idx == _index)
-                    return (_ticket_list_by_owner[_owner][idx]);
+                    return (ticket_list_by_owner[_owner][idx]);
                 ++walk_idx;
             }
         }
@@ -254,100 +265,94 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
     function tokenByIndex(uint256 _index) public view returns (uint256) {
         require(_index < totalSupply());
+
         return (_index + 1);
     }
 
-    address[] private _owners;
-    mapping(address => uint256) private _idx_of_owners;
+    // _____ ____   ____ _____ ____  _
+    //| ____|  _ \ / ___|___  |___ \/ |
+    //|  _| | |_) | |      / /  __) | |
+    //| |___|  _ <| |___  / /  / __/| |
+    //|_____|_| \_\\____|/_/  |_____|_|
+    // BASIC
 
-    mapping(address => uint256[]) private _ticket_list_by_owner;
-    mapping(uint256 => address) private _owner_by_ticket;
-    mapping(uint256 => uint256) private _index_by_ticket;
-
-    mapping(uint256 => uint256) private _custom_price_by_ticket;
-    mapping(uint256 => bool) private _open_by_ticket;
-
-    mapping(uint256 => address) private _approved_by_ticket;
-    mapping(address => mapping (address => bool)) private _approval_for_all_by_owner;
-
-    // ERC721Basic Implementation
     function balanceOf(address _owner) public view returns (uint256) {
         uint256 ret = 0;
-        for (uint256 idx = 0; idx < _ticket_list_by_owner[_owner].length; ++idx) {
-            if (_ticket_list_by_owner[_owner][idx] != 0 && _tickets[_ticket_list_by_owner[_owner][idx]].active)
+        for (uint256 idx = 0; idx < ticket_list_by_owner[_owner].length; ++idx) {
+            if (ticket_list_by_owner[_owner][idx] != 0 && tickets[ticket_list_by_owner[_owner][idx]].active)
                 ++ret;
         }
         return ret;
     }
 
-    function ownerOf(uint256 _tokenId) public view returns (address _owner) {
-        require(exists(_tokenId));
+    function ownerOf(uint256 _token_id) public view returns (address _owner) {
+        require(exists(_token_id));
 
-        return _owner_by_ticket[_tokenId];
+        return (owner_by_ticket[_token_id]);
     }
 
-    function exists(uint256 _tokenId) public view returns (bool _exists) {
-        require(_tokenId != 0);
-        return (_owner_by_ticket[_tokenId] != address(0) && _tickets[_tokenId].active);
+    function exists(uint256 _token_id) public view returns (bool _exists) {
+        require(_token_id != 0);
+
+        return (owner_by_ticket[_token_id] != address(0) && tickets[_token_id].active);
     }
 
-    function approve(address _to, uint256 _tokenId) public {
-        require(exists(_tokenId));
+    function approve(address _to, uint256 _token_id) public {
+        require(exists(_token_id));
         require(_to != msg.sender);
-        require(msg.sender == ownerOf(_tokenId) || _approval_for_all_by_owner[ownerOf(_tokenId)][msg.sender]);
+        require(msg.sender == ownerOf(_token_id) || approval_for_all_by_owner[ownerOf(_token_id)][msg.sender]);
 
-        _approved_by_ticket[_tokenId] = _to;
+        approved_by_ticket[_token_id] = _to;
 
-        emit ERC721Basic.Approval(msg.sender, _to, _tokenId);
+        emit ERC721Basic.Approval(msg.sender, _to, _token_id);
     }
 
-    function getApproved(uint256 _tokenId) public view returns (address) {
-        require(exists(_tokenId));
+    function getApproved(uint256 _token_id) public view returns (address) {
+        require(exists(_token_id));
 
-        return (_approved_by_ticket[_tokenId]);
+        return (approved_by_ticket[_token_id]);
     }
 
     function setApprovalForAll(address _operator, bool _approved) public {
-        require(_approval_for_all_by_owner[msg.sender][_operator] != _approved);
-        _approval_for_all_by_owner[msg.sender][_operator] = _approved;
+        require(approval_for_all_by_owner[msg.sender][_operator] != _approved);
+
+        approval_for_all_by_owner[msg.sender][_operator] = _approved;
 
         emit ERC721Basic.ApprovalForAll(msg.sender, _operator, _approved);
     }
 
     function isApprovedForAll(address _owner, address _operator) public view returns (bool) {
-        return _approval_for_all_by_owner[_owner][_operator];
+        return (approval_for_all_by_owner[_owner][_operator]);
     }
 
-    function transferFrom(address _from, address _to, uint256 _tokenId) public {
-        require(exists(_tokenId));
-        require(_from == msg.sender || _approved_by_ticket[_tokenId] == msg.sender || _approval_for_all_by_owner[ownerOf(_tokenId)][msg.sender]);
-        require(_owner_by_ticket[_tokenId] == _from);
+    function transferFrom(address _from, address _to, uint256 _token_id) public {
+        require(exists(_token_id));
+        require(_from == msg.sender || approved_by_ticket[_token_id] == msg.sender || approval_for_all_by_owner[ownerOf(_token_id)][msg.sender]);
+        require(owner_by_ticket[_token_id] == _from);
         require(_to != address(0));
         require(_to != _from);
 
-        if (_approved_by_ticket[_tokenId] != address(0))
-            _approved_by_ticket[_tokenId] = address(0);
+        if (approved_by_ticket[_token_id] != address(0))
+            approved_by_ticket[_token_id] = address(0);
 
-        if (_open_by_ticket[_tokenId] == true)
-            _open_by_ticket[_tokenId] = false;
+        if (open_by_ticket[_token_id] == true)
+            open_by_ticket[_token_id] = false;
 
-        _owner_by_ticket[_tokenId] = _to;
-        _ticket_list_by_owner[_from][_index_by_ticket[_tokenId]] = 0;
-        _index_by_ticket[_tokenId] = _ticket_list_by_owner[_to].push(_tokenId) - 1;
+        owner_by_ticket[_token_id] = _to;
+        ticket_list_by_owner[_from][index_by_ticket[_token_id]] = 0;
+        index_by_ticket[_token_id] = ticket_list_by_owner[_to].push(_token_id) - 1;
 
-        emit ERC721Basic.Transfer(_from, _to, _tokenId);
+        emit ERC721Basic.Transfer(_from, _to, _token_id);
     }
 
-    function safeTransferFrom(address _from, address _to, uint256 _tokenId) public {
-        transferFrom(_from, _to, _tokenId);
-        if (AddressUtils.isContract(_to) && (ERC721Receiver(_to).onERC721Received(_from, _tokenId, "") != ERC721Receiver(0).onERC721Received.selector))
-            revert();
+    function safeTransferFrom(address _from, address _to, uint256 _token_id) public {
+        transferFrom(_from, _to, _token_id);
+        require(!(AddressUtils.isContract(_to) && (ERC721Receiver(_to).onERC721Received(_from, _token_id, "") != ERC721Receiver(0).onERC721Received.selector)));
     }
 
-    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes _data) public {
-        transferFrom(_from, _to, _tokenId);
-        if (AddressUtils.isContract(_to) && (ERC721Receiver(_to).onERC721Received(_from, _tokenId, _data) != ERC721Receiver(0).onERC721Received.selector))
-            revert();
+    function safeTransferFrom(address _from, address _to, uint256 _token_id, bytes _data) public {
+        transferFrom(_from, _to, _token_id);
+        require(!(AddressUtils.isContract(_to) && (ERC721Receiver(_to).onERC721Received(_from, _token_id, _data) != ERC721Receiver(0).onERC721Received.selector)));
     }
 
 }

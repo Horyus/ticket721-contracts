@@ -5,7 +5,9 @@ const RandomString = require("randomstring");
 let output = "";
 
 let Ticket721;
-let Ticket721Train;
+let Ticket721Event;
+let Ticket721Hub;
+let Ticket721VerifiedAccounts;
 let Ticket721TestReceiver;
 let Web3I;
 let coinbase;
@@ -16,7 +18,6 @@ let total;
 
 let approvals = {};
 let transfers = {};
-let custom_price = {};
 let sale = {};
 let close = {};
 
@@ -32,40 +33,44 @@ describe("ERC721 Tests", () => {
                 provider, arguments
             );
         };
+        const _Ticket721Hub = TruffleContracts(require("../build/contracts/Ticket721Hub.json"));
+        _Ticket721Hub.setProvider(provider);
+        const _Ticket721Event = TruffleContracts(require("../build/contracts/Ticket721Event.json"));
+        _Ticket721Event.setProvider(provider);
         const _Ticket721 = TruffleContracts(require("../build/contracts/Ticket721.json"));
         _Ticket721.setProvider(provider);
-        _Ticket721.deployed().then(d_Ticket721 => {
-            Ticket721 = d_Ticket721;
-            const _Ticket721Train = TruffleContracts(require("../build/contracts/Ticket721Train.json"));
-            _Ticket721Train.setProvider(provider);
-            _Ticket721Train.deployed().then(d_Ticket721Train => {
-                Ticket721Train = d_Ticket721Train;
-                const _Ticket721TestReceiver = TruffleContracts(require("../build/contracts/Ticket721TestReceiver"));
-                _Ticket721TestReceiver.setProvider(provider);
-                _Ticket721TestReceiver.deployed().then(d_Ticket721TestReceiver => {
-                    Ticket721TestReceiver = d_Ticket721TestReceiver;
-                    const _Web3 = new Web3(provider);
-                    Web3I = _Web3;
-                    _Web3.eth.getAccounts().then(_accounts => {
-                        coinbase = _accounts[0];
-                        accounts = _accounts;
-                        const populate = require("./populate");
-                        populate(Ticket721, Ticket721Train, _Web3, accounts).then(res => {
-                            summary = res.summary;
-                            summary[Ticket721TestReceiver.address] = {
-                                amount: 0,
-                                ids: []
-                            };
-                            init = res.init;
-                            total = res.total;
-                            done();
-                        });
-                    });
-                })
-            });
+        const _Ticket721TestReceiver = TruffleContracts(require("../build/contracts/Ticket721TestReceiver"));
+        _Ticket721TestReceiver.setProvider(provider);
+
+        Ticket721Hub = await _Ticket721Hub.deployed();
+        const Ticket721PublicAddress = await Ticket721Hub.public_ticket_registries(0);
+        Ticket721 = await _Ticket721.at(Ticket721PublicAddress);
+
+        Ticket721Event = await _Ticket721Event.deployed();
+        Ticket721TestReceiver = await _Ticket721TestReceiver.deployed();
+
+        const _Web3 = new Web3(provider);
+        Web3I = _Web3;
+        const _accounts = await _Web3.eth.getAccounts();
+        coinbase = _accounts[0];
+        accounts = _accounts;
+        const populate = require("./populate");
+        populate(Ticket721, Ticket721Event, _Web3, accounts).then(res => {
+            summary = res.summary;
+            summary[Ticket721TestReceiver.address] = {
+                amount: 0,
+                ids: []
+            };
+            init = res.init;
+            total = res.total;
+            done();
         });
 
     }, 600000);
+
+    test("NOTHING", () => {
+
+    });
 
     describe("ERC721Metadata Tests", () => {
 
@@ -73,7 +78,7 @@ describe("ERC721 Tests", () => {
 
             test("Check return value", async (done) => {
 
-                if ((await Ticket721.name({from: coinbase})) !== 'My Ticket') {
+                if ((await Ticket721.name({from: coinbase})) !== 'Public Ticket721 | Alpha') {
                     done(new Error("Invalid recovered name"));
                 }
                 done();
@@ -86,7 +91,7 @@ describe("ERC721 Tests", () => {
 
             test("Check return value", async (done) => {
 
-                if ((await Ticket721.symbol({from: coinbase})) !== 'MTK') {
+                if ((await Ticket721.symbol({from: coinbase})) !== 'PT721A') {
                     done(new Error("Invalid recovered symbol"));
                 }
                 done();
@@ -742,7 +747,7 @@ describe("ERC721 Tests", () => {
                     const id = summary[account].ids[id_idx].id;
                     try {
                         output += ("safeTransferFrom(" + account + ", " + to + ", " + id + ", " + data + ") from " + account + " \tshouldn't revert ");
-                        const call_gas = await Ticket721.safeTransferFrom.estimateGas(account, to, id, "", {
+                        const call_gas = await Ticket721.safeTransferFrom.estimateGas(account, to, id, data, {
                             from: account
                         });
                         Ticket721.contract.safeTransferFrom['address,address,uint256,bytes'](account, to, id, data, {
@@ -848,152 +853,32 @@ describe("ERC721 Tests", () => {
 
 });
 
-describe("Ticket721DelegateMinter Implem Tests", () => {
-
-    test("getDelegateMinterMetadata", async (done) => {
-
-        try {
-            const ret = await Ticket721Train.getDelegateMinterMetadata();
-            JSON.parse(ret);
-            done();
-        } catch (e) {
-            done(e);
-        }
-
-    });
-
-});
-
 describe("Ticket721 Tests", () => {
 
     afterAll(() => {
 
         process.stdout.write("Initial State =>\n");
         process.stdout.write(init);
-        let verbose = "+--------------------------------------------+--------------------------------+\n";
+        let verbose = "+--------------------------------------------+-----+\n";
         for (let account_idx = 0; account_idx < accounts.length; ++account_idx) {
             for (let tok_idx = 0; tok_idx < summary[accounts[account_idx]].ids.length; ++ tok_idx) {
-                let tmp = "| " + accounts[account_idx] + " | " + summary[accounts[account_idx]].ids[tok_idx].id + " " + summary[accounts[account_idx]].ids[tok_idx].first_name + " " + summary[accounts[account_idx]].ids[tok_idx].last_name;
-                tmp += " ".repeat(78 - tmp.length) + "|\n";
+                let tmp = "| " + accounts[account_idx] + " | " + summary[accounts[account_idx]].ids[tok_idx].id;
+                tmp += " ".repeat(50 - tmp.length) + " |\n";
                 verbose += tmp;
             }
-            verbose += "+--------------------------------------------+--------------------------------+\n";
+            verbose += "+--------------------------------------------+-----+\n";
         }
         const cont_address = Ticket721TestReceiver.address;
         for (let tok_idx = 0; tok_idx < summary[cont_address].ids.length; ++ tok_idx) {
-            let tmp = "| " + cont_address + " | " + summary[cont_address].ids[tok_idx].id + " " + summary[cont_address].ids[tok_idx].first_name + " " + summary[cont_address].ids[tok_idx].last_name;
-            tmp += " ".repeat(78 - tmp.length) + "|\n";
+            let tmp = "| " + cont_address + " | " + summary[cont_address].ids[tok_idx].id;
+            tmp += " ".repeat(50 - tmp.length) + " |\n";
             verbose += tmp;
         }
-        verbose += "+--------------------------------------------+--------------------------------+\n";
+        verbose += "+--------------------------------------------+-----+\n";
         process.stdout.write("End State =>\n");
         process.stdout.write(verbose);
         process.stdout.write("Actions List =>\n");
         process.stdout.write(output);
-
-    });
-
-    describe("getDefaultTicketPrice()", () => {
-
-        test("Recover default price", async (done) => {
-
-            if ((await Ticket721.getDefaultTicketPrice()) != Web3I.utils.toWei('0.005', 'ether')) {
-                done(new Error(JSON.stringify({
-                    ticket: (await Ticket721.getDefaultTicketPrice()),
-                    web3: Web3I.utils.toWei('0.005', 'ether')
-                })));
-            } else {
-                done();
-            }
-        });
-
-    });
-
-    describe("setTicketPrice()", () => {
-
-        const random_price_set = async (done) => {
-            let found = false;
-            while (!found) {
-                const account_idx = Math.floor(Math.random() * 10);
-                const account = Object.keys(summary)[account_idx];
-
-                const random_price = Math.floor(Math.random() * 10000000);
-
-                if (!summary[account].ids.length) {
-                    continue;
-                }
-                let id_idx = Math.floor(Math.random() * (summary[account].ids.length));
-                const id = summary[account].ids[id_idx].id;
-                if (custom_price[id]) {
-                    continue
-                }
-                found = true;
-                try {
-                    output += ("setTicketPrice(" + id + ", " + random_price + ") \tshouldn't revert ");
-                    const call_gas = await Ticket721.setTicketPrice.estimateGas(id, random_price, {
-                        from: coinbase
-                    });
-                    await Ticket721.setTicketPrice(id, random_price, {from: coinbase, gas: call_gas * 2});
-                    custom_price[id] = random_price;
-                    output += "✓\n";
-                    done();
-                } catch (e) {
-                    output += "✗\n";
-                    done(e);
-                }
-            }
-
-        };
-
-        for (let test_idx = 0; test_idx < 25; ++test_idx) {
-            test("Random Ticket Price Change #" + (test_idx + 1), random_price_set);
-        }
-
-    });
-
-    describe("getTicketPrice(uint256)", () => {
-
-        test("Check previously edited prices", async (done) => {
-
-            for (let price_idx = 0; price_idx < Object.keys(custom_price).length; ++price_idx) {
-                output += ("getTicketPrice(" + Object.keys(custom_price)[price_idx] + ") \tshouldn't revert ");
-                if ((await Ticket721.getTicketPrice(Object.keys(custom_price)[price_idx])) != custom_price[Object.keys(custom_price)[price_idx]].toString()) {
-                    output += "✗\n";
-                    done(new Error("Invalid remote price"));
-                }
-                output += "✓\n";
-            }
-            done();
-        });
-
-        test("Check non-previously edited price", async (done) => {
-
-            let found = false;
-            while (!found) {
-                const account_idx = Math.floor(Math.random() * 10);
-                const account = Object.keys(summary)[account_idx];
-
-                if (!summary[account].ids.length) {
-                    continue;
-                }
-                let id_idx = Math.floor(Math.random() * (summary[account].ids.length));
-                const id = summary[account].ids[id_idx].id;
-                if (custom_price[id]) {
-                    continue
-                }
-                found = true;
-                output += ("getTicketPrice(" + id + ") \tshouldn't revert ");
-                if ((await Ticket721.getTicketPrice(id)).toString() != (await Ticket721.getDefaultTicketPrice()).toString()) {
-                    output += "✗\n";
-                    done(new Error("Invalid default price"));
-                } else {
-                    output += "✓\n";
-                    done();
-                }
-            }
-
-
-        });
 
     });
 
@@ -1082,11 +967,10 @@ describe("Ticket721 Tests", () => {
             try {
                 for (let sale_idx = 0; sale_idx < Object.keys(sale).length; ++sale_idx) {
                     if (sale[Object.keys(sale)[sale_idx]]) {
-                        const price = await Ticket721.getTicketPrice(Object.keys(sale)[sale_idx], {from: accounts[0]});
+                        const price = await Ticket721Event.getTicketPrice(Object.keys(sale)[sale_idx], {from: accounts[0]});
                         let idx = 0;
                         let account = accounts[idx];
                         while ((await Ticket721.ownerOf(Object.keys(sale)[sale_idx], {from: account})).toLowerCase() === account.toLowerCase()) {
-                            console.log((await Ticket721.ownerOf(Object.keys(sale)[sale_idx], {from: account})), account);
                             ++idx;
                             account = accounts[idx];
                         }
