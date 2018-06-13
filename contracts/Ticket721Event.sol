@@ -36,9 +36,9 @@ contract Ticket721Event is Ownable, Ticket721Controller {
     uint256 public resale_price;
     string public data;
     string internal event_name;
-    uint256 internal sale_end;
-    uint256 internal event_begin;
-    uint256 internal event_end;
+    uint256 public sale_end;
+    uint256 public event_begin;
+    uint256 public event_end;
     bool internal registered;
 
     function setTicketCap(uint256 _new_ticket_cap) public onlyOwner {
@@ -89,11 +89,11 @@ contract Ticket721Event is Ownable, Ticket721Controller {
             msg.sender.transfer(SafeMath.sub(msg.value, ticket_price));
     }
 
-    function register() public onlyOwner {
-        linked_sale.register(ticket_cap);
+    // Ticket721Controller
+    function getMintPrice() public view returns (uint256) {
+        return (ticket_price);
     }
 
-    // Ticket721Controller
     function getTicketPrice(uint256 _id) public view returns (uint256) {
         require(ticket_infos[_id]);
         return (resale_price);
@@ -104,19 +104,27 @@ contract Ticket721Event is Ownable, Ticket721Controller {
     }
 
     function name() public view returns (string) {
-        return event_name;
+        return (event_name);
+    }
+
+    function getData() public view returns (string) {
+        return (data);
     }
 
     function getSaleEnd() public view returns (uint256) {
-        return sale_end;
+        return (sale_end);
     }
 
     function getEventBegin() public view returns (uint256) {
-        return event_begin;
+        return (event_begin);
     }
 
     function getEventEnd() public view returns (uint256) {
-        return event_end;
+        return (event_end);
+    }
+
+    function register() public onlyOwner {
+        linked_sale.register(ticket_cap);
     }
 
     // ERC165
@@ -124,13 +132,15 @@ contract Ticket721Event is Ownable, Ticket721Controller {
     bytes4(keccak256('supportsInterface(bytes4)'));
 
     bytes4 public constant INTERFACE_SIGNATURE_Ticket721Controller =
+    bytes4(keccak256('getMintPrice()')) ^
     bytes4(keccak256('getTicketPrice(uint256)')) ^
     bytes4(keccak256('getLinkedSale()')) ^
     bytes4(keccak256('name()')) ^
+    bytes4(keccak256('getData()')) ^
     bytes4(keccak256('getSaleEnd()')) ^
     bytes4(keccak256('getEventBegin()')) ^
-    bytes4(keccak256('register()')) ^
-    bytes4(keccak256('getEventEnd()'));
+    bytes4(keccak256('getEventEnd()')) ^
+    bytes4(keccak256('register()'));
 
     function supportsInterface(bytes4 _interface_id) external view returns (bool) {
         return ((_interface_id == INTERFACE_SIGNATURE_ERC165)

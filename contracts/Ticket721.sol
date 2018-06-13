@@ -22,13 +22,15 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     bytes4(keccak256('supportsInterface(bytes4)'));
 
     bytes4 public constant INTERFACE_SIGNATURE_Ticket721Controller =
+    bytes4(keccak256('getMintPrice()')) ^
     bytes4(keccak256('getTicketPrice(uint256)')) ^
     bytes4(keccak256('getLinkedSale()')) ^
     bytes4(keccak256('name()')) ^
+    bytes4(keccak256('getData()')) ^
     bytes4(keccak256('getSaleEnd()')) ^
     bytes4(keccak256('getEventBegin()')) ^
-    bytes4(keccak256('register()')) ^
-    bytes4(keccak256('getEventEnd()'));
+    bytes4(keccak256('getEventEnd()')) ^
+    bytes4(keccak256('register()'));
 
     bytes4 public constant INTERFACE_SIGNATURE_ERC721Basic =
     bytes4(keccak256('balanceOf(address)')) ^
