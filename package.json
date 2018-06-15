@@ -29,12 +29,13 @@
   },
   "homepage": "https://gitlab.com/mortimr/Ticket721#README",
   "devDependencies": {
+    "embark": "^3.0.10",
     "fs-extra": "^6.0.1",
     "ganache-core": "^2.1.0",
     "human-names": "^1.0.10",
     "jest": "^22.4.4",
+    "live-plugin-manager": "^0.12.0",
     "people-names": "^1.0.15",
-    "embark": "^3.0.10",
     "randomstring": "^1.1.5",
     "web3": "^1.0.0-beta.34"
   },
