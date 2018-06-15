@@ -1,7 +1,7 @@
 module.exports = async (Ticket721, Ticket721Event, Web3, accounts) => {
 
     const ret = {};
-    const price = await Ticket721Event.ticket_price();
+    const price = await Ticket721Event.methods.ticket_price().call();
     let total = 0;
 
     let verbose = "+--------------------------------------------+-----+\n";
@@ -13,8 +13,8 @@ module.exports = async (Ticket721, Ticket721Event, Web3, accounts) => {
         };
         for (let ticket_idx = 0; ticket_idx < ret[accounts[account_idx]].amount; ++ticket_idx) {
             try {
-                const call_gas = await Ticket721Event.buy.estimateGas({from: accounts[account_idx], value: price});
-                await Ticket721Event.buy({
+                const call_gas = await Ticket721Event.methods.buy().estimateGas({from: accounts[account_idx], value: price});
+                await Ticket721Event.methods.buy().send({
                     from: accounts[account_idx],
                     value: price,
                     gas: call_gas
@@ -23,7 +23,7 @@ module.exports = async (Ticket721, Ticket721Event, Web3, accounts) => {
                 throw (e);
             }
             ++total;
-            const insert = {id: (await Ticket721.tokenOfOwnerByIndex(accounts[account_idx], ticket_idx, {from: accounts[account_idx]}))};
+            const insert = {id: parseInt((await Ticket721.methods.tokenOfOwnerByIndex(accounts[account_idx], ticket_idx).call({from: accounts[account_idx]})))};
             let tmp = "| " + accounts[account_idx] + " | " + insert.id;
             tmp += " ".repeat(50 - tmp.length) + " |\n";
             verbose += tmp;

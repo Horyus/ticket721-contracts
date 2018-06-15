@@ -1,0 +1,75 @@
+{
+  "default": {
+    "deployment": {
+      "host": "localhost",
+      "port": 8558,
+      "type": "rpc"
+    },
+    "dappConnection": [
+      "$WEB3",
+      "http://localhost:8558"
+    ],
+    "gas": "auto",
+    "contracts": {
+      "Ticket721VerifiedAccounts": {
+        "deploy": false
+      },
+      "Ticket721Event": {
+        "args": [
+          "$Ticket721Public",
+          100000,
+          12345,
+          "DATA",
+          "NAME",
+          2393075742789,
+          2479472142790,
+          2565872142790
+        ]
+      },
+      "Ticket721Hub": {
+      },
+      "Ticket721Public": {
+        "instanceOf": "Ticket721",
+        "args": [
+          "Ticket721 Public Registry",
+          "T721P",
+          false
+        ]
+      },
+      "Ticket721": {
+        "args": [
+          "Ticket721 Registry",
+          "T721",
+          true
+        ]
+      },
+      "Migrations": {
+        "deploy": false
+      },
+      "Ticket721TestReceiver": {
+        "deploy": true
+      },
+      "ERC721Holder": {
+        "deploy": false
+      },
+      "strings": {
+        "deploy": false
+      },
+      "AddressUtils": {
+        "deploy": false
+      },
+      "SafeMath": {
+        "deploy": false
+      },
+      "Ownable": {
+        "deploy": false
+      }
+    },
+    "afterDeploy": [
+      "Ticket721.methods.setHub(\"$Ticket721Hub\").send()",
+      "Ticket721Hub.methods.addPublicRegistry(\"$Ticket721Public\").send()",
+      "Ticket721Hub.methods.addVerifiedRegistry(\"$Ticket721\").send()",
+      "Ticket721Event.methods.register().send()"
+    ]
+  }
+}

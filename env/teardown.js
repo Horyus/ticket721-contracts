@@ -6,7 +6,9 @@ const teardown = async () => {
     console.log("+--------------------------------------+\n");
     global.Server.close();
     console.log("# Closing Ganache server");
-    Fs.removeSync("./build/");
+    Fs.removeSync("./dist");
+    Fs.removeSync("./.embark");
+    Fs.removeSync("./chains.json");
     console.log("# Removing Contract Artifacts");
     console.log("\n+--------------------------------------+");
     console.log("| Test Teardown Successful             |");

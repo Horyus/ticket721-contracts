@@ -23,35 +23,47 @@ const setup = async () => new Promise((ok, ko) => {
     global.Server = Ganache.server({
         gasLimit: 50000000
     });
-    let intervalId = setInterval(() => {
-        isPortTaken(8547, (err, status) => {
-            if (status === false) {
-                Server.listen(8547, (err) => {
-                    if (err)
-                        ko(err);
-                    console.log("# Started Ganache server on port 8547");
-                    exec("./node_modules/.bin/truffle migrate --reset", async (err, stdout, stderr) => {
-                        if (err) {
+    if (process.env.BC_URL) {
+        if (!process.env.DIST_PATH)
+            ko(new Error("Required ENV var: BC_URL, DIST_PATH"));
+        // Path to contracts artifacts
+        //
+        console.log("# Using Ganache server: " + process.env.BC_URL);
+        console.log("\n+--------------------------------------+");
+        console.log("| Test Setup Successful                |");
+        console.log("+--------------------------------------+\n");
+        ok();
+
+    } else {
+        let intervalId = setInterval(() => {
+            isPortTaken(8558, (err, status) => {
+                if (status === false) {
+                    Server.listen(8558, (err) => {
+                        if (err)
+                            ko(err);
+                        console.log("# Started Ganache server on port 8558");
+                        exec("./node_modules/.bin/embark build", async (err, stdout, stderr) => {
+                            if (err) {
+                                console.error(stderr);
+                                console.error(stdout);
+                                ko(err);
+                            }
                             console.error(stderr);
                             console.error(stdout);
-                            ko(err);
-                        }
-                        console.error(stderr);
-                        console.error(stdout);
-                        console.log("# Deployed Smart Contracts with Truffle");
-                        console.log("\n+--------------------------------------+");
-                        console.log("| Test Setup Successful                |");
-                        console.log("+--------------------------------------+\n");
-                        ok();
+                            console.log("# Deployed Smart Contracts with Truffle");
+                            console.log("\n+--------------------------------------+");
+                            console.log("| Test Setup Successful                |");
+                            console.log("+--------------------------------------+\n");
+                            ok();
+                        });
                     });
-                });
-                clearInterval(intervalId);
-            } else {
-                console.warn("Port 8547 is taken, waiting ...");
-            }
-        })
-    }, 5000);
-
+                    clearInterval(intervalId);
+                } else {
+                    console.warn("Port 8558 is taken, waiting ...");
+                }
+            })
+        }, 5000);
+    }
 });
 
 module.exports = setup;
