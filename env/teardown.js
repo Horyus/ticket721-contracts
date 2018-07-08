@@ -6,7 +6,8 @@ const teardown = async () => {
     console.log("+--------------------------------------+\n");
     global.Server.close();
     console.log("# Closing Ganache server");
-    Fs.removeSync("./dist");
+    if (!process.env.DIST_PATH)
+        Fs.removeSync("./dist");
     Fs.removeSync("./.embark");
     Fs.removeSync("./chains.json");
     console.log("# Removing Contract Artifacts");
