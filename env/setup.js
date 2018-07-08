@@ -36,12 +36,12 @@ const setup = async () => new Promise((ok, ko) => {
 
     } else {
         let intervalId = setInterval(() => {
-            isPortTaken(8558, (err, status) => {
+            isPortTaken(8545, (err, status) => {
                 if (status === false) {
-                    Server.listen(8558, (err) => {
+                    Server.listen(8545, (err) => {
                         if (err)
                             ko(err);
-                        console.log("# Started Ganache server on port 8558");
+                        console.log("# Started Ganache server on port 8545");
                         exec("./node_modules/.bin/embark build", async (err, stdout, stderr) => {
                             if (err) {
                                 console.error(stderr);
@@ -59,7 +59,7 @@ const setup = async () => new Promise((ok, ko) => {
                     });
                     clearInterval(intervalId);
                 } else {
-                    console.warn("Port 8558 is taken, waiting ...");
+                    console.warn("Port 8545 is taken, waiting ...");
                 }
             })
         }, 5000);

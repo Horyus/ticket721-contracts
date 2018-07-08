@@ -6,7 +6,7 @@ let coinbase;
 describe("ERC165 Tests", () => {
 
     beforeAll(async () => {
-        const provider = new Web3.providers.HttpProvider(process.env.BC_URL || "http://localhost:8558");
+        const provider = new Web3.providers.HttpProvider(process.env.BC_URL || "http://localhost:8545");
         provider.sendAsync = function () {
             return provider.send.apply(
                 provider, arguments
@@ -17,7 +17,7 @@ describe("ERC165 Tests", () => {
         const dist_path = process.env.DIST_PATH || "../dist";
 
         const _Ticket721 = require(dist_path + "/contracts/Ticket721Public");
-        Ticket721 = new _Web3.eth.Contract(_Ticket721.abi, _Ticket721.address);
+        Ticket721 = new _Web3.eth.Contract(_Ticket721.abiDefinition, _Ticket721.deployedAddress);
 
 
         const _accounts = await _Web3.eth.getAccounts();
