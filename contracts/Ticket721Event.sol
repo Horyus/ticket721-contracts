@@ -11,7 +11,7 @@ contract Ticket721Event is Ownable, Ticket721Controller {
     constructor(Ticket721 _sale,
         uint256 _amount,
         uint256 _ticket_price,
-        string _data,
+        string _event_uri,
         string _name,
         uint256 _sale_end,
         uint256 _event_begin,
@@ -23,7 +23,7 @@ contract Ticket721Event is Ownable, Ticket721Controller {
         linked_sale = _sale;
         ticket_price = _ticket_price;
         resale_price = _ticket_price;
-        data = _data;
+        event_uri = _event_uri;
         event_name = _name;
         sale_end = _sale_end;
         event_begin = _event_begin;
@@ -34,7 +34,7 @@ contract Ticket721Event is Ownable, Ticket721Controller {
     uint256 public ticket_cap;
     uint256 public ticket_price;
     uint256 public resale_price;
-    string public data;
+    string public event_uri;
     string internal event_name;
     uint256 public sale_end;
     uint256 public event_begin;
@@ -53,8 +53,8 @@ contract Ticket721Event is Ownable, Ticket721Controller {
         resale_price = _new_ticket_resale_price;
     }
 
-    function setEventData(string _new_data) public onlyOwner {
-        data = _new_data;
+    function setEventURI(string _new_event_uri) public onlyOwner {
+        event_uri = _new_event_uri;
     }
 
     function setName(string _new_name) public onlyOwner {
@@ -107,8 +107,8 @@ contract Ticket721Event is Ownable, Ticket721Controller {
         return (event_name);
     }
 
-    function getData() public view returns (string) {
-        return (data);
+    function getEventURI() public view returns (string) {
+        return (event_uri);
     }
 
     function getSaleEnd() public view returns (uint256) {
@@ -124,7 +124,7 @@ contract Ticket721Event is Ownable, Ticket721Controller {
     }
 
     function register() public onlyOwner {
-        linked_sale.register(ticket_cap);
+        linked_sale.register(ticket_cap, event_uri);
     }
 
     // ERC165

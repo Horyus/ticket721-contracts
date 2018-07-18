@@ -19,7 +19,7 @@
           "$Ticket721Public",
           100000,
           12345,
-          "{}",
+          "{\"name\": \"Public JS Meetup\",\"image\": \"https://wiredcraft.com/images/posts/js-meetup-08.png\",\"description\": \"Learn the basics of Javascript.\"}",
           "Test Event !",
           2393075742789,
           2479472142790,
@@ -69,7 +69,7 @@
       "Ticket721.methods.setHub(\"$Ticket721Hub\").send()",
       "Ticket721Hub.methods.addPublicRegistry(\"$Ticket721Public\").send()",
       "Ticket721Hub.methods.addVerifiedRegistry(\"$Ticket721\").send()",
-      "Ticket721Event.methods.register().send()"
+      "Ticket721Event.methods.register().send({gas: 5000000})"
     ]
   }
 }

@@ -89,6 +89,7 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     struct ControllerInfos {
         uint256 controller_id;
         uint256 ticket_cap;
+        string event_uri;
         uint256 current_ticket_count;
     }
 
@@ -103,6 +104,7 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
     mapping(uint256 => uint256) internal index_by_ticket;
     mapping(uint256 => address) internal owner_by_ticket;
+    mapping(uint256 => address) internal event_by_ticket;
     mapping(uint256 => bool) internal open_by_ticket;
     mapping(uint256 => address) internal approved_by_ticket;
     mapping(address => uint256[]) internal ticket_list_by_owner;
@@ -134,22 +136,16 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     }
 
     /**
-    * @param _new_uri New token_uri to use.
-    */
-    function setTokenURI(string _new_uri) public onlyOwner {
-        internal_token_uri = _new_uri;
-    }
-
-    /**
     * @param _amount Amount of tickets the sale if going to cap at.
     */
-    function register(uint256 _amount) public verifiedOnly {
+    function register(uint256 _amount, string _event_uri) public verifiedOnly {
         require(ticket_counts[msg.sender].ticket_cap == 0);
         require(AddressUtils.isContract(msg.sender));
         require(Ticket721Controller(msg.sender).supportsInterface(INTERFACE_SIGNATURE_Ticket721Controller));
 
         ticket_counts[msg.sender].ticket_cap = _amount;
         ticket_counts[msg.sender].controller_id = controller_idx;
+        ticket_counts[msg.sender].event_uri = _event_uri;
         ++controller_idx;
 
         emit Register(msg.sender);
@@ -169,6 +165,7 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
         uint tick_idx = tickets.push(Ticket({plugged: msg.sender, active: true})) - 1;
         owner_by_ticket[tick_idx] = _owner;
+        event_by_ticket[tick_idx] = msg.sender;
         index_by_ticket[tick_idx] = ticket_list_by_owner[_owner].push(tick_idx) - 1;
 
         return (tick_idx);
@@ -235,8 +232,8 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         return (internal_symbol);
     }
 
-    function tokenURI(uint256) public view returns (string) {
-        return (internal_token_uri);
+    function tokenURI(uint256 _token_id) public view returns (string) {
+        return (ticket_counts[event_by_ticket[_token_id]].event_uri);
     }
 
     // _____ ____   ____ _____ ____  _
