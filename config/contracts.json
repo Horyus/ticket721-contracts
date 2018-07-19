@@ -19,8 +19,8 @@
           "$Ticket721Public",
           100000,
           12345,
-          "{\"name\": \"Public JS Meetup\",\"image\": \"https://wiredcraft.com/images/posts/js-meetup-08.png\",\"description\": \"Learn the basics of Javascript.\"}",
-          "Test Event !",
+          "https://ipfs.infura.io/ipfs/QmSyYVaazK4e5mgVnYoo1kL3qTc59D12jj1t7bXDnaw9td",
+          "JS Meetup",
           2393075742789,
           2479472142790,
           2565872142790
