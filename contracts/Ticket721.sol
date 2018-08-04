@@ -203,6 +203,10 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         emit Buy(msg.sender, _token_id);
     }
 
+    function fromEvent(uint256 _token_id) public view returns (address) {
+        return (event_by_ticket[_token_id]);
+    }
+
     // _____ ____   ____ _  __  ____
     //| ____|  _ \ / ___/ |/ /_| ___|
     //|  _| | |_) | |   | | '_ \___ \
