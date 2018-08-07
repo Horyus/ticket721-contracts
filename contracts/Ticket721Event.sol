@@ -28,9 +28,11 @@ contract Ticket721Event is Ownable, Ticket721Controller {
         sale_end = _sale_end;
         event_begin = _event_begin;
         event_end = _event_end;
+        ticket_sold = 0;
     }
 
     Ticket721 public linked_sale;
+    uint256 public ticket_sold;
     uint256 public ticket_cap;
     uint256 public ticket_price;
     uint256 public resale_price;
@@ -87,6 +89,8 @@ contract Ticket721Event is Ownable, Ticket721Controller {
 
         if (msg.value > ticket_price)
             msg.sender.transfer(SafeMath.sub(msg.value, ticket_price));
+
+        ticket_sold += 1;
     }
 
     // Ticket721Controller
@@ -123,8 +127,20 @@ contract Ticket721Event is Ownable, Ticket721Controller {
         return (event_end);
     }
 
+    function getRemainingTickets() public view returns (uint256) {
+        return (ticket_cap - ticket_sold);
+    }
+
+    function getTicketCap() public view returns (uint256) {
+        return (ticket_cap);
+    }
+
     function register() public onlyOwner {
         linked_sale.register(ticket_cap, event_uri);
+    }
+
+    function getContractType() public view returns (string) {
+        return "Ticket721Event";
     }
 
     // ERC165

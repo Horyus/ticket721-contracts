@@ -67,6 +67,7 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     event Sale(address indexed _owner, uint256 _token_id);
     event Buy(address indexed _buyer, uint256 _token_id);
     event Register(address indexed _controller);
+    event Mint(address indexed _owner, address indexed _controller);
 
     /**
     * @param _name Name of registry.
@@ -167,6 +168,8 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         owner_by_ticket[tick_idx] = _owner;
         event_by_ticket[tick_idx] = msg.sender;
         index_by_ticket[tick_idx] = ticket_list_by_owner[_owner].push(tick_idx) - 1;
+
+        emit Mint(_owner, msg.sender);
 
         return (tick_idx);
     }
