@@ -21,6 +21,12 @@ contract Ticket721Controller is ERC165, Ownable {
 
     function getEventEnd() public view returns (uint256);
 
+    function getRemainingTickets() public view returns (uint256);
+
+    function getTicketCap() public view returns (uint256);
+
+    function getContractType() public view returns (string);
+
     function register() public;
 
 }
