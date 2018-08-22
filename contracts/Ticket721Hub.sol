@@ -16,6 +16,7 @@ contract Ticket721Hub is Ownable {
     mapping (address => Ticket721Controller[]) public sale_ownership;
     mapping (address => bool) public controller_registered;
     mapping (address => address) public companions;
+    mapping (address => address) public accounts;
     address[] public public_ticket_registries;
     address[] public verified_ticket_registries;
 
@@ -49,7 +50,10 @@ contract Ticket721Hub is Ownable {
     }
 
     function setCompanion(address _companion_address) public {
+        if (companions[accounts[msg.sender]] != address(0))
+            companions[accounts[msg.sender]] = address(0);
         companions[_companion_address] = msg.sender;
+        accounts[msg.sender] = _companion_address;
     }
 
 }
