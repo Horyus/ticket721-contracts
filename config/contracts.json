@@ -66,9 +66,9 @@
       }
     },
     "afterDeploy": [
-      "Ticket721.methods.setHub(\"$Ticket721Hub\").send()",
-      "Ticket721Hub.methods.addPublicRegistry(\"$Ticket721Public\").send()",
-      "Ticket721Hub.methods.addVerifiedRegistry(\"$Ticket721\").send()",
+      "Ticket721.methods.setHub(\"$Ticket721Hub\").send({gas: 5000000})",
+      "Ticket721Hub.methods.addPublicRegistry(\"$Ticket721Public\").send({gas: 5000000})",
+      "Ticket721Hub.methods.addVerifiedRegistry(\"$Ticket721\").send({gas: 5000000})",
       "Ticket721Event.methods.register().send({gas: 5000000})"
     ]
   }
