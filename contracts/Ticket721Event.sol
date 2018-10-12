@@ -36,12 +36,18 @@ contract Ticket721Event is Ownable, Ticket721Controller {
     uint256 public ticket_cap;
     uint256 public ticket_price;
     uint256 public resale_price;
+    mapping (uint256 => uint256) custom_resale_price;
     string public event_uri;
     string internal event_name;
     uint256 public sale_end;
     uint256 public event_begin;
     uint256 public event_end;
     bool internal registered;
+
+    modifier onlyTicketOwner(uint256 _ticket_id) {
+        require(msg.sender == linked_sale.ownerOf(_ticket_id));
+        _;
+    }
 
     function setTicketCap(uint256 _new_ticket_cap) public onlyOwner {
         linked_sale.editCap(_new_ticket_cap);
@@ -51,8 +57,17 @@ contract Ticket721Event is Ownable, Ticket721Controller {
         ticket_price = _new_ticket_price;
     }
 
-    function setTicketResalePrice(uint256 _new_ticket_resale_price) public onlyOwner {
-        resale_price = _new_ticket_resale_price;
+    function setTicketResalePrice(uint256 _ticket_id, uint256 _new_ticket_resale_price) public onlyTicketOwner(_ticket_id) {
+        custom_resale_price[_ticket_id] = _new_ticket_resale_price;
+    }
+
+    function saleTicket(uint256 _ticket_id, uint256 _sale_price) public onlyTicketOwner(_ticket_id) {
+        setTicketResalePrice(_ticket_id, _sale_price);
+        linked_sale.openSale(_ticket_id);
+    }
+
+    function closeSaleTicket(uint _ticket_id) public onlyTicketOwner(_ticket_id) {
+        linked_sale.closeSale(_ticket_id);
     }
 
     function setEventURI(string _new_event_uri) public onlyOwner {
@@ -100,7 +115,7 @@ contract Ticket721Event is Ownable, Ticket721Controller {
 
     function getTicketPrice(uint256 _id) public view returns (uint256) {
         require(ticket_infos[_id]);
-        return (resale_price);
+        return (custom_resale_price[_id]);
     }
 
     function getLinkedSale() public view returns (address) {
