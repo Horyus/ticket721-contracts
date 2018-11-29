@@ -41,6 +41,7 @@
   },
   "jest": {
     "globalSetup": "./env/setup.js",
-    "globalTeardown": "./env/teardown.js"
+    "globalTeardown": "./env/teardown.js",
+    "testURL": "http://localhost/"
   }
 }
