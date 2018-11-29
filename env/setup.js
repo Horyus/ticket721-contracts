@@ -50,7 +50,7 @@ const setup = async () => new Promise((ok, ko) => {
                             }
                             console.error(stderr);
                             console.error(stdout);
-                            console.log("# Deployed Smart Contracts with Truffle");
+                            console.log("# Deployed Smart Contracts with Embark");
                             console.log("\n+--------------------------------------+");
                             console.log("| Test Setup Successful                |");
                             console.log("+--------------------------------------+\n");

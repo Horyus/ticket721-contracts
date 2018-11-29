@@ -29,7 +29,7 @@
   },
   "homepage": "https://gitlab.com/mortimr/Ticket721#README",
   "devDependencies": {
-    "embark": "^3.1.5",
+    "embark": "^3.2.4",
     "fs-extra": "^6.0.1",
     "ganache-core": "^2.1.2",
     "human-names": "^1.0.10",
@@ -41,6 +41,7 @@
   },
   "jest": {
     "globalSetup": "./env/setup.js",
-    "globalTeardown": "./env/teardown.js"
+    "globalTeardown": "./env/teardown.js",
+    "testURL": "http://localhost/"
   }
 }

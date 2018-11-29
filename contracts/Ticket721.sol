@@ -64,10 +64,11 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
     bytes4(keccak256('closeSale(uint256)')) ^
     bytes4(keccak256('buy(uint256)'));
 
-    event Sale(address indexed _owner, uint256 _token_id);
-    event Buy(address indexed _buyer, uint256 _token_id);
+    event Sale(address indexed _owner, uint256 indexed _token_id);
+    event CloseSale(address indexed _owner, uint256 indexed _token_id);
+    event Buy(address indexed _buyer, uint256 indexed _token_id);
     event Register(address indexed _controller);
-    event Mint(address indexed _owner, address indexed _controller);
+    event Mint(address indexed _owner, address indexed _controller, uint256 indexed _id);
 
     /**
     * @param _name Name of registry.
@@ -169,25 +170,26 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
         event_by_ticket[tick_idx] = msg.sender;
         index_by_ticket[tick_idx] = ticket_list_by_owner[_owner].push(tick_idx) - 1;
 
-        emit Mint(_owner, msg.sender);
+        emit Mint(_owner, msg.sender, tick_idx);
 
         return (tick_idx);
     }
 
     function openSale(uint256 _token_id) public {
         require(exists(_token_id));
-        require(msg.sender == ownerOf(_token_id) || approval_for_all_by_owner[ownerOf(_token_id)][msg.sender]);
+        require(msg.sender == ownerOf(_token_id) || approval_for_all_by_owner[ownerOf(_token_id)][msg.sender] || (tx.origin == ownerOf(_token_id) && msg.sender == event_by_ticket[_token_id]));
 
         open_by_ticket[_token_id] = true;
 
-        emit Sale(msg.sender, _token_id);
+        emit Sale(owner_by_ticket[_token_id], _token_id);
     }
 
     function closeSale(uint256 _token_id) public {
         require(exists(_token_id));
-        require(msg.sender == ownerOf(_token_id) || approval_for_all_by_owner[ownerOf(_token_id)][msg.sender]);
+        require(msg.sender == ownerOf(_token_id) || approval_for_all_by_owner[ownerOf(_token_id)][msg.sender] || (tx.origin == ownerOf(_token_id) && msg.sender == event_by_ticket[_token_id]));
 
         open_by_ticket[_token_id] = false;
+        emit CloseSale(owner_by_ticket[_token_id], _token_id);
     }
 
     function buy(uint256 _token_id) public payable {
@@ -208,6 +210,10 @@ contract Ticket721 is Ownable, ERC165, ERC721Basic, ERC721Enumerable, ERC721Meta
 
     function fromEvent(uint256 _token_id) public view returns (address) {
         return (event_by_ticket[_token_id]);
+    }
+
+    function isSaleOpen(uint256 _token_id) public view returns (bool) {
+        return (open_by_ticket[_token_id]);
     }
 
     // _____ ____   ____ _  __  ____
